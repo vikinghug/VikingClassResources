@@ -22,7 +22,7 @@ function VikingClassResources:new(o)
 end
 
 function VikingClassResources:Init()
-    Apollo.RegisterAddon(self, nil, nil, {"ActionBarFrame"})
+    Apollo.RegisterAddon(self, nil, nil, {"VikingActionBarFrame"})
 end
 
 function VikingClassResources:OnLoad()
