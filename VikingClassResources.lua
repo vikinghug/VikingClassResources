@@ -122,7 +122,7 @@ function VikingClassResources:OnEsperUpdateTimer()
 	end
 
 	-- Combo Points Solid
-	local strInCombat = unitPlayer:IsInCombat() and "CM_EsperSprites:sprEsper_ComboNumPurple_" or "CM_EsperSprites:sprEsper_ComboNumDull_"
+	local strInCombat = unitPlayer:IsInCombat() and "CRB_NumberFloaters:sprNumber_Physical" or "CRB_NumberFloaters:sprNumber_Physical"
 	self.wndMain:FindChild("ComboNumber"):SetSprite(strInCombat..nComboCurrent)
 	self.wndMain:FindChild("ComboBits:ComboSolid1"):Show(nComboCurrent >= 1)
 	self.wndMain:FindChild("ComboBits:ComboSolid2"):Show(nComboCurrent >= 2)
