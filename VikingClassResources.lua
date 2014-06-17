@@ -150,18 +150,22 @@ function VikingClassResources:OnEsperEnteredCombat(unitPlayer, bInCombat)
 	end
 
 	if bInCombat then
+
+		self.wndMain:FindChild("ComboBits"):SetBGColor(ApolloColor.new(.078, .066, .133, .6))
 		self.wndMain:FindChild("ManaProgressCover"):Show(true)
 		self.wndMain:FindChild("EsperBaseFrame_InCombat"):Show(true)
 
 		self.nFadeLevel = 0
 		for idx, wndCurr in pairs(self.wndMain:FindChild("ComboBits"):GetChildren()) do
-			wndCurr:SetBGColor(ApolloColor.new(1, 1, 1, 1))
+			wndCurr:SetBGColor(ApolloColor.new(.235, .72, .47, 1))
 		end
 
 		Apollo.StopTimer("EsperOutOfCombatFade")
 	else
+
+		self.wndMain:FindChild("ComboBits"):SetBGColor(ApolloColor.new(.078, .066, .133, .6))
 		for idx, wndCurr in pairs(self.wndMain:FindChild("ComboBits"):GetChildren()) do
-			wndCurr:SetBGColor(ApolloColor.new(1, 1, 1, 0.5))
+			wndCurr:SetBGColor(ApolloColor.new(.235, .72, .47, 1))
 		end
 
 		self.wndMain:FindChild("ManaProgressCover"):Show(false)
@@ -177,11 +181,16 @@ function VikingClassResources:OnEsperOutOfCombatFade()
 
 	self.nFadeLevel = self.nFadeLevel + 1
 	for idx, wndCurr in pairs(self.wndMain:FindChild("ComboBits"):GetChildren()) do
-		wndCurr:SetBGColor(ApolloColor.new(1, 1, 1, 0.5 - (0.025 * self.nFadeLevel)))
+		wndCurr:SetBGColor(ApolloColor.new(.235, .72, .47, 0.5 - (0.025 * self.nFadeLevel)))
 	end
+
+	Print(self.nFadeLevel)
+	self.wndMain:FindChild("ComboBits"):SetBGColor(ApolloColor.new(.078, .066, .133, 0.5 - (0.5 * self.nFadeLevel)))
 
 	if self.nFadeLevel < 20 then
 		Apollo.StartTimer("EsperOutOfCombatFade")
+	else
+
 	end
 end
 
