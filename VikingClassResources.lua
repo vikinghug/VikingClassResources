@@ -184,7 +184,7 @@ function VikingClassResources:OnEsperOutOfCombatFade()
 		wndCurr:SetBGColor(ApolloColor.new(.235, .72, .47, 0.5 - (0.025 * self.nFadeLevel)))
 	end
 
-	Print(self.nFadeLevel)
+
 	self.wndMain:FindChild("ComboBits"):SetBGColor(ApolloColor.new(.078, .066, .133, 0.5 - (0.5 * self.nFadeLevel)))
 
 	if self.nFadeLevel < 20 then
