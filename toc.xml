@@ -2,5 +2,5 @@
 <Addon Author="VikinghugUI" APIVersion="8" Name="VikingClassResources" Description="Replaces ClassResources" Version="0.1">
     <Script Name="VikingClassResources.lua"/>
     <Form Name="VikingClassResources.xml"/>
-	<ReplaceAddon Name="ClassResources"/>
+    <ReplaceAddon Name="ClassResources"/>
 </Addon>
