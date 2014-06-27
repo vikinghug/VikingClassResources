@@ -265,12 +265,6 @@ function VikingClassResources:OnSlingerUpdateTimer()
     wndProgress:SetProgress(nPartialProgress, 100)
 
 
-    local barColor = ApolloColor.new("fff2d65d")
-    if bInCombat then
-      barColor = ApolloColor.new("ffc85039")
-    end
-
-    wndProgress:SetBarColor(barColor)
     -- wndCurr:FindChild("NodeRed"):Show(bInCombat and not bThisBubbleFilled)
 
     -- Check last state
