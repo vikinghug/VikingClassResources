@@ -80,12 +80,12 @@ end
 
 function VikingClassResources:OnCreateEsper()
   Apollo.RegisterEventHandler("VarChange_FrameCount",     "OnEsperUpdateTimer", self)
-  Apollo.RegisterEventHandler("UnitEnteredCombat",      "OnEsperEnteredCombat", self)
+  Apollo.RegisterEventHandler("UnitEnteredCombat",        "OnEsperEnteredCombat", self)
   Apollo.RegisterTimerHandler("EsperOutOfCombatFade",     "OnEsperOutOfCombatFade", self)
   Apollo.CreateTimer("EsperOutOfCombatFade", 0.5, false)
   Apollo.StopTimer("EsperOutOfCombatFade")
 
-    self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingEsperResourceForm", g_wndActionBarResources, self)
+  self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingEsperResourceForm", g_wndActionBarResources, self)
   self.wndMain:FindChild("EsperBaseFrame_InCombat"):Show(false, true)
   self.wndMain:ToFront()
 
