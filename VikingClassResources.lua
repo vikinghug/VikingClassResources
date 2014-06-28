@@ -31,17 +31,7 @@ local VikingClassResources = {
   ]]
 }
 
--- local ktEngineerStanceToShortString =
--- {
---   [0] = "",
---   [1] = Apollo.GetString("EngineerResource_Aggro"),
---   [2] = Apollo.GetString("EngineerResource_Defend"),
---   [3] = Apollo.GetString("EngineerResource_Passive"),
---   [4] = Apollo.GetString("EngineerResource_Assist"),
---   [5] = Apollo.GetString("EngineerResource_Stay"),
--- }
 
--- medic 4, warrior 1, stalker 5, engineer 2
 local tClassName = {
   [1] = "Warrior",
   [2] = "Engineer",
