@@ -1,17 +1,37 @@
 require "Window"
+require "ApolloTimer"
 
 local VikingClassResources = {}
 
-local knEngineerPetGroupId = 298 -- TODO Hardcoded engineer pet grouping
+-- local knEngineerPetGroupId = 298 -- TODO Hardcoded engineer pet grouping
 
-local ktEngineerStanceToShortString =
-{
-  [0] = "",
-  [1] = Apollo.GetString("EngineerResource_Aggro"),
-  [2] = Apollo.GetString("EngineerResource_Defend"),
-  [3] = Apollo.GetString("EngineerResource_Passive"),
-  [4] = Apollo.GetString("EngineerResource_Assist"),
-  [5] = Apollo.GetString("EngineerResource_Stay"),
+-- local ktEngineerStanceToShortString =
+-- {
+--   [0] = "",
+--   [1] = Apollo.GetString("EngineerResource_Aggro"),
+--   [2] = Apollo.GetString("EngineerResource_Defend"),
+--   [3] = Apollo.GetString("EngineerResource_Passive"),
+--   [4] = Apollo.GetString("EngineerResource_Assist"),
+--   [5] = Apollo.GetString("EngineerResource_Stay"),
+-- }
+
+-- medic 4, warrior 1, stalker 5, engineer 2
+local tClassName = {
+  [1] = "Warrior",
+  [2] = "Engineer",
+  [3] = "Esper",
+  [4] = "Medic",
+  [5] = "Stalker",
+  [7] = "Spellslinger"
+}
+
+local tResourceType = {
+  [1] = 1,
+  [2] = 1,
+  [3] = 1,
+  [4] = 1,
+  [5] = 4,
+  [7] = 4
 }
 
 function VikingClassResources:new(o)
@@ -54,514 +74,231 @@ function VikingClassResources:OnRequiredFlagsChanged()
   end
 end
 
+
 function VikingClassResources:OnCharacterCreated()
   local unitPlayer = GameLib.GetPlayerUnit()
   if not unitPlayer then
     return
   end
 
-  local eClassId =  unitPlayer:GetClassId()
-  if eClassId == GameLib.CodeEnumClass.Engineer then
-    self:OnCreateEngineer()
-  elseif unitPlayer:GetClassId() == GameLib.CodeEnumClass.Esper then
-    self:OnCreateEsper()
-  elseif unitPlayer:GetClassId() == GameLib.CodeEnumClass.Spellslinger then
-    self:OnCreateSlinger()
-  elseif unitPlayer:GetClassId() == GameLib.CodeEnumClass.Medic then
-    self:OnCreateMedic()
-  elseif unitPlayer:GetClassId() == GameLib.CodeEnumClass.Warrior then
-    --self:OnCreateWarrior()
-  end
+  self.eClassID =  unitPlayer:GetClassId()
+
+  self:CreateClassResources()
+
 end
 
------------------------------------------------------------------------------------------------
--- Esper
------------------------------------------------------------------------------------------------
 
-function VikingClassResources:OnCreateEsper()
-  Apollo.RegisterEventHandler("VarChange_FrameCount",     "OnEsperUpdateTimer", self)
-  Apollo.RegisterEventHandler("UnitEnteredCombat",        "OnEsperEnteredCombat", self)
-  Apollo.RegisterTimerHandler("EsperOutOfCombatFade",     "OnEsperOutOfCombatFade", self)
-  Apollo.CreateTimer("EsperOutOfCombatFade", 0.5, false)
-  Apollo.StopTimer("EsperOutOfCombatFade")
+function VikingClassResources:CreateClassResources()
 
-  self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingEsperResourceForm", g_wndActionBarResources, self)
-  self.wndMain:FindChild("EsperBaseFrame_InCombat"):Show(false, true)
+  Apollo.RegisterEventHandler("VarChange_FrameCount",     "OnUpdateTimer", self)
+  Apollo.RegisterEventHandler("UnitEnteredCombat",        "OnEnteredCombat", self)
+  Apollo.RegisterTimerHandler("OutOfCombatFade",          "OnOutOfCombatFade", self)
+
+  self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingClassResourceForm", g_wndActionBarResources, self)
   self.wndMain:ToFront()
-
-  local nLeft, nTop, nRight, nBottom = self.wndMain:GetRect()
-  Apollo.SetGlobalAnchor("CastingBarBottom", 0.0, nTop, true)
-
-  self.nFadeLevel = 0
-  self.xmlDoc = nil
+  --
 end
 
-function VikingClassResources:OnEsperUpdateTimer()
-  local unitPlayer = GameLib.GetPlayerUnit()
 
-  -- Mana
-  local nManaMax = math.floor(unitPlayer:GetMaxMana())
-  local nManaCurrent = math.floor(unitPlayer:GetMana())
-  self.wndMain:FindChild("ManaProgressBar"):SetMax(nManaMax)
-  self.wndMain:FindChild("ManaProgressBar"):SetProgress(nManaCurrent)
-  self.wndMain:FindChild("ManaProgressBar"):SetTooltip(String_GetWeaselString(Apollo.GetString("EsperResource_FocusTooltip"), nManaCurrent, nManaMax))
-  self.wndMain:FindChild("ManaProgressText"):SetText(nManaCurrent == nManaMax and "" or (math.floor(nManaCurrent / nManaMax * 100).."%"))
+function VikingClassResources:ResizeResourceNodes(nResourceMax)
+  local nOffsets = {}
+  nOffsets.nOL, nOffsets.nOT, nOffsets.nOR, nOffsets.nOB = self.wndMain:GetAnchorOffsets()
 
-  -- Combo Points Animation
-  local nComboMax = unitPlayer:GetMaxResource(1)
-  local nComboCurrent = unitPlayer:GetResource(1)
-  for idx = 5, 1, -1 do
-    -- Death animation
-    if nComboCurrent == 0 and self.wndMain:FindChild("ComboSolid"..idx):IsVisible() then
-      --self.wndMain:FindChild("ComboGlowFlash"):SetSprite("CRB_Esper:sprEsperResource_CompFade"..idx)
-      break
-    end
+  local nWidth = (nOffsets.nOR - nOffsets.nOL) / nResourceMax
 
-    -- Birth Animation
-    if nComboCurrent >= idx and not self.wndMain:FindChild("ComboSolid"..idx):IsVisible() then
-      --self.wndMain:FindChild("ComboGlowFlash"):SetSprite("CRB_Esper:sprEsperResource_Glow"..idx)
-      break
-    end
+  for i = 1, nResourceMax do
+    local p       = i-1
+    local wndNode = self.wndMain:FindChild("Node" .. i)
+    wndNode:SetAnchorPoints(0, 0, 0, 1)
+    wndNode:SetAnchorOffsets(nWidth * p, 0, nWidth * i, 0)
   end
 
-  -- Combo Points Solid
-  local strInCombat = unitPlayer:IsInCombat() and "CRB_NumberFloaters:sprNumber_Physical" or "CRB_NumberFloaters:sprNumber_Physical"
-  self.wndMain:FindChild("ComboNumber"):SetSprite(strInCombat..nComboCurrent)
-  self.wndMain:FindChild("ComboBits:ComboSolid1"):Show(nComboCurrent >= 1)
-  self.wndMain:FindChild("ComboBits:ComboSolid2"):Show(nComboCurrent >= 2)
-  self.wndMain:FindChild("ComboBits:ComboSolid3"):Show(nComboCurrent >= 3)
-  self.wndMain:FindChild("ComboBits:ComboSolid4"):Show(nComboCurrent >= 4)
-  self.wndMain:FindChild("ComboBits:ComboSolid5"):Show(nComboCurrent >= 5)
-
-  -- Innate
-  local bInnate = GameLib.IsCurrentInnateAbilityActive()
-  if bInnate and not self.wndMain:FindChild("InnateActiveGlowTop"):GetData() then
-    self.wndMain:FindChild("InnateActiveGlowTop"):SetData(true)
-    self.wndMain:FindChild("InnateActiveGlowTop"):SetSprite("sprEsper_Anim_OuterGlow_Top")
-    self.wndMain:FindChild("InnateActiveGlowBottom"):SetSprite("sprEsper_Anim_OuterGlow_Bottom")
-    self.wndMain:FindChild("InnateActiveGlowFrame"):SetSprite("sprEsper_Anim_OuterGlow_Frame")
-  elseif not bInnate then
-    self.wndMain:FindChild("InnateActiveGlowTop"):SetData(false)
-  end
-
-  self:HelperToggleVisibiltyPreferences(self.wndMain, unitPlayer)
 end
 
-function VikingClassResources:OnEsperEnteredCombat(unitPlayer, bInCombat)
-  if unitPlayer ~= GameLib.GetPlayerUnit() or not self.wndMain or not self.wndMain:IsValid() then
-    return
-  end
-
-  if bInCombat then
-
-    self.wndMain:FindChild("ComboBits"):SetBGColor(ApolloColor.new(.078, .066, .133, .6))
-    self.wndMain:FindChild("ManaProgressCover"):Show(true)
-    self.wndMain:FindChild("EsperBaseFrame_InCombat"):Show(true)
-
-    self.nFadeLevel = 0
-    for idx, wndCurr in pairs(self.wndMain:FindChild("ComboBits"):GetChildren()) do
-      wndCurr:SetBGColor(ApolloColor.new(.235, .72, .47, 1))
-    end
-
-    Apollo.StopTimer("EsperOutOfCombatFade")
-  else
-
-    self.wndMain:FindChild("ComboBits"):SetBGColor(ApolloColor.new(.078, .066, .133, .6))
-    for idx, wndCurr in pairs(self.wndMain:FindChild("ComboBits"):GetChildren()) do
-      wndCurr:SetBGColor(ApolloColor.new(.235, .72, .47, 1))
-    end
-
-    self.wndMain:FindChild("ManaProgressCover"):Show(false)
-    self.wndMain:FindChild("EsperBaseFrame_InCombat"):Show(false)
-    Apollo.StartTimer("EsperOutOfCombatFade")
-  end
-end
-
-function VikingClassResources:OnEsperOutOfCombatFade()
-  if not self.wndMain or not self.wndMain:IsValid() then
-    return
-  end
-
-  self.nFadeLevel = self.nFadeLevel + 1
-  for idx, wndCurr in pairs(self.wndMain:FindChild("ComboBits"):GetChildren()) do
-    wndCurr:SetBGColor(ApolloColor.new(.235, .72, .47, 0.5 - (0.025 * self.nFadeLevel)))
-  end
-
-
-  self.wndMain:FindChild("ComboBits"):SetBGColor(ApolloColor.new(.078, .066, .133, 0.5 - (0.5 * self.nFadeLevel)))
-
-  if self.nFadeLevel < 20 then
-    Apollo.StartTimer("EsperOutOfCombatFade")
-  else
-
-  end
-end
-
------------------------------------------------------------------------------------------------
--- Spellslinger
------------------------------------------------------------------------------------------------
-
-function VikingClassResources:OnCreateSlinger()
-  Apollo.RegisterEventHandler("VarChange_FrameCount",     "OnSlingerUpdateTimer", self)
-  Apollo.RegisterEventHandler("UnitEnteredCombat",      "OnSlingerEnteredCombat", self)
-
-    self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingSlingerResourceForm", g_wndActionBarResources, self)
-  self.wndMain:FindChild("SurgeGlow"):Show(false, true)
-  self.wndMain:ToFront()
-
-  local nLeft, nTop, nRight, nBottom = self.wndMain:GetRect()
-  Apollo.SetGlobalAnchor("CastingBarBottom", 0.0, nTop, true)
-
-  self.wndSlinger1 = self.wndMain:FindChild("SlingerNode1")
-  self.wndSlinger2 = self.wndMain:FindChild("SlingerNode2")
-  self.wndSlinger3 = self.wndMain:FindChild("SlingerNode3")
-  self.wndSlinger4 = self.wndMain:FindChild("SlingerNode4")
-  self.wndSlinger1:FindChild("NodeProgress"):SetProgress(250)
-  self.wndSlinger2:FindChild("NodeProgress"):SetProgress(250)
-  self.wndSlinger3:FindChild("NodeProgress"):SetProgress(250)
-  self.wndSlinger4:FindChild("NodeProgress"):SetProgress(250)
-
-  self.nFadeLevel = 0
-  self.xmlDoc = nil
+function VikingClassResources:OnUpdateTimer()
 
   local unitPlayer = GameLib.GetPlayerUnit()
-  if unitPlayer then
-    self:OnSlingerEnteredCombat(unitPlayer, unitPlayer:IsInCombat())
-  end
+  local className  = tClassName[self.eClassID]
+  local resourceID = tResourceType[self.eClassID]
+
+
+  local nResourceMax     = unitPlayer:GetMaxResource(resourceID)
+  local nResourceCurrent = unitPlayer:GetResource(resourceID)
+  self["Update" .. className .. "Resources"](self, unitPlayer, nResourceMax, nResourceCurrent)
+
+end
+
+function VikingClassResources:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
+  local nProgressMax     = nResourceMax and nResourceMax or math.floor(unitPlayer:GetMaxMana())
+  local nProgressCurrent = nResourceCurrent and nResourceCurrent or math.floor(unitPlayer:GetMana())
+  local className        = tClassName[self.eClassID]
+
+  self.wndMain:FindChild("PrimaryProgressBar"):SetMax(nProgressMax)
+  self.wndMain:FindChild("PrimaryProgressBar"):SetProgress(nProgressCurrent)
+  self.wndMain:FindChild("PrimaryProgressBar"):SetTooltip(String_GetWeaselString(Apollo.GetString( className .. "Resource_FocusTooltip" ), nProgressCurrent, nProgressMax))
+  self.wndMain:FindChild("PrimaryProgressText"):SetText(nProgressCurrent == nProgressMax and "" or (math.floor(nProgressCurrent / nProgressMax * 100).."%"))
+
 end
 
 
-function VikingClassResources:OnSlingerUpdateTimer()
-
-  local SpriteSlingerNode = "CM_SpellslingerSprites:sprSlinger_Node_"
-  local SpriteSlingerNodeBar = "CM_SpellslingerSprites:sprSlinger_NodeBar_"
+--
+-- WARRIOR
 
 
-  local unitPlayer = GameLib.GetPlayerUnit()
-  local nResourceMax = unitPlayer:GetMaxResource(4)
-  local nResourceCurrent = unitPlayer:GetResource(4)
-  local nResourceMaxDiv4 = nResourceMax / 4
-  local bSurgeActive = GameLib.IsSpellSurgeActive()
-  local bInCombat = unitPlayer:IsInCombat()
+function VikingClassResources:UpdateWarriorResources(unitPlayer, nResourceMax, nResourceCurrent)
+  local bOverdrive           = GameLib.IsOverdriveActive()
+  local wndPrimaryProgress   = self.wndMain:FindChild("PrimaryProgressBar")
+  local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
+  local unitPlayer           = GameLib.GetPlayerUnit()
 
-  -- Mana
-  local nManaMax = math.floor(unitPlayer:GetMaxMana())
-  local nManaCurrent = math.floor(unitPlayer:GetMana())
-  self.wndMain:FindChild("ManaProgressBar"):SetMax(nManaMax)
-  self.wndMain:FindChild("ManaProgressBar"):SetProgress(nManaCurrent)
-  self.wndMain:FindChild("ManaProgressBar"):SetTooltip(String_GetWeaselString(Apollo.GetString("SpellslingerResource_FocusTooltip"), nManaCurrent, nManaMax))
-  self.wndMain:FindChild("ManaProgressBar"):SetStyleEx("EdgeGlow", bInCombat and (nManaCurrent / nManaMax < 0.97))
-  self.wndMain:FindChild("ManaProgressText"):SetText(nManaCurrent == nManaMax and "" or (math.floor(nManaCurrent / nManaMax * 100).."%"))
-  self.wndMain:FindChild("ManaProgressText"):SetTextColor(bInCombat and ApolloColor.new("ffffc757") or ApolloColor.new("UI_TextHoloTitle"))
-  self.wndMain:FindChild("ManaProgressBacker"):Show(nManaCurrent ~= nManaMax)
+  self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
 
-  -- Nodes
-  local strNodeTooltip = String_GetWeaselString(Apollo.GetString("Spellslinger_SpellSurge"), nResourceCurrent, nResourceMax)
-  for idx, wndCurr in pairs({ self.wndSlinger1, self.wndSlinger2, self.wndSlinger3, self.wndSlinger4 }) do
-    local wndProgress = wndCurr:FindChild("NodeProgress")
-    local nPartialProgress = nResourceCurrent - (nResourceMaxDiv4 * (idx - 1)) -- e.g. 250, 500, 750, 1000
-    local bThisBubbleFilled = nPartialProgress >= nResourceMaxDiv4
-    wndProgress:SetMax(nResourceMaxDiv4)
-    wndProgress:SetProgress(nPartialProgress, 100)
+  if bOverdrive and not self.bOverDriveActive then
+    self.bOverDriveActive = true
+    wndSecondaryProgress:SetMax(100)
+    wndSecondaryProgress:SetProgress(100)
 
-
-    -- wndCurr:FindChild("NodeRed"):Show(bInCombat and not bThisBubbleFilled)
-
-    -- Check last state
-    local nLast = wndCurr:GetData() or nPartialProgress
-    if bInCombat and nLast ~= nResourceMaxDiv4 and nPartialProgress == nResourceMaxDiv4 then -- Wasn't filled, now filled = just filled flash
-      wndCurr:FindChild("NodeFlash"):SetSprite(SpriteSlingerNodeBar .. "Flash_Orange")
-    end
-    wndCurr:SetData(nPartialProgress)
-    wndCurr:SetTooltip(strNodeTooltip)
+    self.WarriorOverdriveTick = ApolloTimer.Create(0.01, true, "OnWarriorOverdriveTick", self)
+    self.WarriorOverdriveDone = ApolloTimer.Create(8, false, "OnWarriorOverdriveDone", self)
   end
 
-  -- Surge
-  self.wndMain:FindChild("SurgeGlow"):Show(bSurgeActive, bSurgeActive, 0.4)
+  wndSecondaryProgress:Show(self.bOverDriveActive)
+  wndPrimaryProgress:Show(not self.bOverDriveActive)
 
-  self:HelperToggleVisibiltyPreferences(self.wndMain, unitPlayer)
+
+  self.wndMain:FindChild("InnateGlow"):Show(bOverdrive)
+
 end
 
-function VikingClassResources:OnSlingerEnteredCombat(unitPlayer, bInCombat)
-  if unitPlayer ~= GameLib.GetPlayerUnit() or not self.wndMain or not self.wndMain:IsValid() then
-    return
-  end
-
-  if bInCombat then
-    -- self.wndMain:FindChild("SurgeGlow"):SetSprite("CM_SpellslingerSprites:sprSlinger_LargeSigil_InCombat")
-    -- self.wndMain:FindChild("ManaProgressBar"):SetFullSprite("CM_SpellslingerSprites:sprSlinger_ManaBar_InCombat")
-  else
-    -- self.wndMain:FindChild("SurgeGlow"):SetSprite("CM_SpellslingerSprites:sprSlinger_LargeSigil_OutOfCombat")
-    -- self.wndMain:FindChild("ManaProgressBar"):SetFullSprite("CM_SpellslingerSprites:sprSlinger_ManaBar_OutOfCombat")
-  end
+function VikingClassResources:OnWarriorOverdriveTick()
+  self.wndMain:FindChild("SecondaryProgressBar"):SetProgress(0, 8)
 end
 
------------------------------------------------------------------------------------------------
--- Medic
------------------------------------------------------------------------------------------------
+function VikingClassResources:OnWarriorOverdriveDone()
+  self.bOverDriveActive = false
 
-function VikingClassResources:OnCreateMedic()
-  Apollo.RegisterEventHandler("VarChange_FrameCount",     "OnMedicUpdateTimer", self)
-  Apollo.RegisterEventHandler("UnitEnteredCombat",      "OnMedicEnteredCombat", self)
-
-  self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingMedicResourceForm", g_wndActionBarResources, self)
-  self.wndMain:ToFront()
-
-  local nLeft, nTop, nRight, nBottom = self.wndMain:GetRect()
-  Apollo.SetGlobalAnchor("CastingBarBottom", 0.0, nTop, true)
-
-  self.tWindowMap =
-  {
-    ["ManaProgressBacker"]    = self.wndMain:FindChild("ManaProgressBacker"),
-    ["ManaProgressBar"]     = self.wndMain:FindChild("ManaProgressBar"),
-    ["ManaProgressText"]    = self.wndMain:FindChild("ManaProgressText"),
-    ["BG_7Squares"]       = self.wndMain:FindChild("BG_7Squares"),
-    ["Bit_1"]         = self.wndMain:FindChild("Bit_1"),
-    ["Bit_2"]         = self.wndMain:FindChild("Bit_2"),
-    ["Bit_3"]         = self.wndMain:FindChild("Bit_3"),
-    ["Bit_4"]         = self.wndMain:FindChild("Bit_4"),
-    ["Bit_5"]         = self.wndMain:FindChild("Bit_5"),
-    ["Bit_6"]         = self.wndMain:FindChild("Bit_6"),
-    ["MedicNode1"]        = self.wndMain:FindChild("MedicNode1"),
-    ["MedicNode2"]        = self.wndMain:FindChild("MedicNode2"),
-    ["MedicNode3"]        = self.wndMain:FindChild("MedicNode3"),
-    ["MedicNode4"]        = self.wndMain:FindChild("MedicNode4"),
-    ["MedicNode1:FillSprite"] = self.wndMain:FindChild("MedicNode1:FillSprite"),
-    ["MedicNode2:FillSprite"] = self.wndMain:FindChild("MedicNode2:FillSprite"),
-    ["MedicNode3:FillSprite"] = self.wndMain:FindChild("MedicNode3:FillSprite"),
-    ["MedicNode4:FillSprite"] = self.wndMain:FindChild("MedicNode4:FillSprite"),
-    ["MedicNode1:EmptySprite"]  = self.wndMain:FindChild("MedicNode1:EmptySprite"),
-    ["MedicNode2:EmptySprite"]  = self.wndMain:FindChild("MedicNode2:EmptySprite"),
-    ["MedicNode3:EmptySprite"]  = self.wndMain:FindChild("MedicNode3:EmptySprite"),
-    ["MedicNode4:EmptySprite"]  = self.wndMain:FindChild("MedicNode4:EmptySprite"),
-  }
-
-  self.xmlDoc = nil
-  self.bCombat = nil
-
-  local unitPlayer = GameLib.GetPlayerUnit()
-  if unitPlayer then
-    self.bCombat = unitPlayer:IsInCombat()
-    self:OnMedicEnteredCombat(unitPlayer, self.bCombat)
-  end
+  self.WarriorOverdriveTick:Stop()
 end
 
-function VikingClassResources:OnMedicUpdateTimer()
-  local unitPlayer = GameLib.GetPlayerUnit()  -- Can instead just listen to a CharacterChange, CharacterCreate, etc. event
-  local nResourceMax = unitPlayer:GetMaxResource(1)
-  local nResourceCurrent = unitPlayer:GetResource(1)
-  local tBuffs = unitPlayer:GetBuffs()
 
-  -- Mana
-  local nManaMax = math.floor(unitPlayer:GetMaxMana())
-  local nManaCurrent = math.floor(unitPlayer:GetMana())
-  self.tWindowMap["ManaProgressBar"]:SetMax(nManaMax)
-  self.tWindowMap["ManaProgressBar"]:SetProgress(nManaCurrent)
-  self.tWindowMap["ManaProgressBar"]:SetStyleEx("EdgeGlow", self.bCombat and (nManaCurrent / nManaMax < 0.97))
-  self.tWindowMap["ManaProgressBar"]:SetTooltip(String_GetWeaselString(Apollo.GetString("MedicResource_FocusTooltip"), nManaCurrent, nManaMax))
 
-  self.tWindowMap["ManaProgressText"]:SetText(nManaCurrent == nManaMax and "" or (math.floor(nManaCurrent / nManaMax * 100).."%"))
-  self.tWindowMap["ManaProgressText"]:SetTextColor(self.bCombat and ApolloColor.new("UI_TextHoloTitle") or ApolloColor.new("ff56b381"))
-  self.tWindowMap["ManaProgressBacker"]:Show(nManaCurrent ~= nManaMax)
+--
+-- ENGINEER
 
-  -- Partial Node Count
+function VikingClassResources:UpdateEngineerResources(unitPlayer, nResourceMax, nResourceCurrent)
+  Print("UpdateEngineerResources!!!")
+
+end
+
+
+--
+-- ESPER
+
+function VikingClassResources:UpdateEsperResources(unitPlayer, nResourceMax, nResourceCurrent)
+
+  self:UpdateProgressBar(unitPlayer)
+  self:ResizeResourceNodes(nResourceMax)
+
+  for i = 1, nResourceMax do
+    local nShow = nResourceCurrent >= i and 1 or 0
+
+    local wndNodeProgress = self.wndMain:FindChild("Node"..i):FindChild("NodeProgress")
+    wndNodeProgress:SetMax(nShow)
+    wndNodeProgress:SetProgress(nShow)
+  end
+
+  self:ShowInnate()
+end
+
+
+--
+-- MEDIC
+
+function VikingClassResources:UpdateMedicResources(unitPlayer, nResourceMax, nResourceCurrent)
+
+  local nPartialMax   = 3
+  local unitPlayer    = GameLib.GetPlayerUnit()
   local nPartialCount = 0
+  self:UpdateProgressBar(unitPlayer)
+
+
+  tBuffs = unitPlayer:GetBuffs()
+
   for idx, tCurrBuffData in pairs(tBuffs.arBeneficial or {}) do
-    if tCurrBuffData.splEffect:GetId() == 42569 then -- TODO replace with code enum
+    if tCurrBuffData.splEffect:GetId() == 42569 then
       nPartialCount = tCurrBuffData.nCount
       break
     end
   end
 
-  -- Nodes
-  local bFirstPartial = true
-  for idx = 1, 4 do
-    -- Full vs Partial
-    local strIndex = "MedicNode"..idx
-    local bFull = nResourceCurrent >= idx
-    local bShowPartial = bFirstPartial and nPartialCount > 0
-    self.tWindowMap[strIndex..":FillSprite"]:Show(bFull or bShowPartial, not (bFull or bShowPartial))
-    self.tWindowMap[strIndex..":EmptySprite"]:Show(not bFull)
-
-    -- Anim
-    local wndCurr = self.tWindowMap[strIndex]
-    if bFull and not wndCurr:GetData() then
-      wndCurr:SetSprite(self.bCombat and "sprMedic_Anim_BrightGreenGrow" or "sprMedic_Anim_OutOfCombatGreenGrow")
-    elseif not bFull and wndCurr:GetData() then
-      wndCurr:SetSprite(self.bCombat and "sprMedic_Anim_BrightGreenFade" or "sprMedic_Anim_OutOfCombatGreenFade")
+  for i = 1, nResourceMax do
+    local nProgress = nPartialMax
+    if i-1 < nResourceCurrent then
+      nProgress = nPartialMax
+    elseif i-1 == nResourceCurrent then
+      nProgress = nPartialCount
+    else
+      nProgress = 0
     end
-    wndCurr:SetData(bFull)
 
-    -- Sprite
-    local strSpriteToUse = ""
-    if not self.bCombat then
-      strSpriteToUse = "CM_MedicSprites:sprMedic_Cube_DullGreen"
-    elseif bFull then
-      strSpriteToUse = "CM_MedicSprites:sprMedic_Cube_BrightGreen_3"
-    elseif not bFull and nPartialCount == 2 then
-      strSpriteToUse = "CM_MedicSprites:sprMedic_Cube_BrightGreen_2"
-      bFirstPartial = false
-    elseif not bFull and nPartialCount == 1 then
-      strSpriteToUse = "CM_MedicSprites:sprMedic_Cube_BrightGreen_1"
-      bFirstPartial = false
-    end
-    -- self.tWindowMap[strIndex..":FillSprite"]:SetSprite(strSpriteToUse)
+    local wndNodeProgress = self.wndMain:FindChild("Node"..i):FindChild("NodeProgress")
+    wndNodeProgress:SetMax(nPartialMax)
+    wndNodeProgress:SetProgress(nProgress)
+
+    self:ShowInnate()
   end
-
-  -- Innate
-  local bInnate = GameLib.IsCurrentInnateAbilityActive()
-  if bInnate and not self.tWindowMap["BG_7Squares"]:GetData() then
-    self.tWindowMap["BG_7Squares"]:SetSprite("sprMedic_Anim_7Squares")
-    self.tWindowMap["Bit_1"]:SetSprite("sprMedic_Anim_Bit_1")
-    self.tWindowMap["Bit_2"]:SetSprite("sprMedic_Anim_Bit_2")
-    self.tWindowMap["Bit_3"]:SetSprite("sprMedic_Anim_Bit_3")
-    self.tWindowMap["Bit_4"]:SetSprite("sprMedic_Anim_Bit_4")
-    self.tWindowMap["Bit_5"]:SetSprite("sprMedic_Anim_Bit_5")
-    self.tWindowMap["Bit_6"]:SetSprite("sprMedic_Anim_Bit_6")
-  end
-  self.tWindowMap["BG_7Squares"]:SetData(bInnate)
-
-  self:HelperToggleVisibiltyPreferences(self.wndMain, unitPlayer)
 end
 
-function VikingClassResources:OnMedicEnteredCombat(unitPlayer, bInCombat)
-  if unitPlayer ~= GameLib.GetPlayerUnit() or not self.wndMain or not self.wndMain:IsValid() then
-    return
-  end
 
-  self.bCombat = bInCombat
+
+--
+-- STALKER
+
+function VikingClassResources:UpdateStalkerResources(unitPlayer, nResourceMax, nResourceCurrent)
+  Print("UpdateStalkerResources!!!")
+  self:UpdateProgressBar(unitPlayer)
+
 end
 
------------------------------------------------------------------------------------------------
--- Engineer
------------------------------------------------------------------------------------------------
 
-function VikingClassResources:OnCreateEngineer()
-  Apollo.RegisterEventHandler("VarChange_FrameCount",     "OnEngineerUpdateTimer", self)
-  Apollo.RegisterEventHandler("ShowActionBarShortcut",    "OnShowActionBarShortcut", self)
-  Apollo.RegisterTimerHandler("EngineerOutOfCombatFade",    "OnEngineerOutOfCombatFade", self)
 
-    self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingEngineerResourceForm", g_wndActionBarResources, self)
-  self.wndMain:FindChild("StanceMenuOpenerBtn"):AttachWindow(self.wndMain:FindChild("StanceMenuBG"))
+--
+-- SPELLSLINGER
 
-  Apollo.SetGlobalAnchor("CastingBarBottom", 0.0, nTop, true)
+function VikingClassResources:UpdateSpellslingerResources(unitPlayer, nResourceMax, nResourceCurrent)
 
-  for idx = 1, 5 do
-    self.wndMain:FindChild("Stance"..idx):SetData(idx)
+  local nNodes            = 4
+  local unitPlayer        = GameLib.GetPlayerUnit()
+  local nNodeProgressSize = nResourceMax / nNodes
+  self:UpdateProgressBar(unitPlayer)
+
+  for i = 1, nNodes do
+    local nPartialProgress = nResourceCurrent - (nNodeProgressSize * (i - 1))
+    local wndNodeProgress = self.wndMain:FindChild("Node"..i):FindChild("NodeProgress")
+    wndNodeProgress:SetMax(nNodeProgressSize)
+    wndNodeProgress:SetProgress(nPartialProgress, nResourceMax)
   end
 
-  self:OnShowActionBarShortcut(1, IsActionBarSetVisible(1)) -- Show petbar if active from reloadui/load screen
-
-  self.xmlDoc = nil
+  self:ShowInnate()
 end
 
-function VikingClassResources:OnEngineerUpdateTimer()
-  if not self.wndMain then
-    return
-  end
 
-  local unitPlayer = GameLib.GetPlayerUnit()
-  local bInCombat = unitPlayer:IsInCombat()
-  local nResourceMax = unitPlayer:GetMaxResource(1)
-  local nResourceCurrent = unitPlayer:GetResource(1)
-  local nResourcePercent = nResourceCurrent / nResourceMax
-
-  local wndMainResourceFrame = self.wndMain:FindChild("MainResourceFrame")
-  local wndProgressFrame = wndMainResourceFrame:FindChild("BaseProgressFrame")
-  local wndProgressTextBacker = wndMainResourceFrame:FindChild("ProgressTextBacker")
-  if not wndMainResourceFrame or not wndProgressFrame then
-    return
-  end
-
-  local wndBar = wndProgressFrame:FindChild("ProgressBar")
-  local wndBarText = wndProgressFrame:FindChild("ProgressText")
-  wndBar:SetMax(nResourceMax)
-  wndBar:SetProgress(nResourceCurrent)
-  wndBarText:SetText(String_GetWeaselString(Apollo.GetString("CRB_ProgressSimple"), nResourceCurrent, nResourceMax))
-  wndProgressTextBacker:Show(nResourcePercent > .05)
-
-  if nResourcePercent <= .05 then
-    wndBar:SetStyleEx("EdgeGlow", false)
-
-  elseif nResourcePercent > .05 and nResourcePercent < .95 then
-    wndBar:SetStyleEx("EdgeGlow", true)
-  elseif nResourcePercent >= .95 then
-    wndBar:SetStyleEx("EdgeGlow", false)
-  end
-
-  if nResourcePercent > 0 and nResourcePercent < 0.3 then
-    wndBarText:SetTextColor("UI_TextHoloBodyHighlight")
-    -- wndBar:SetFullSprite("spr_CM_Engineer_BarFill_InCombat1")
-    -- wndBar:SetGlowSprite("spr_CM_Engineer_BarEdgeGlow_InCombat1")
-  elseif nResourcePercent >= 0.3 and nResourcePercent <= 0.7 then
-    wndBarText:SetTextColor("ffffc757")
-    -- wndBar:SetFullSprite("spr_CM_Engineer_BarFill_InCombat2")
-    -- wndBar:SetGlowSprite("spr_CM_Engineer_BarEdgeGlow_InCombat2")
-  elseif nResourcePercent > 0.7 then
-    wndBarText:SetTextColor("ffffeea4")
-    -- wndBar:SetFullSprite("spr_CM_Engineer_BarFill_InCombat2")
-    -- wndBar:SetGlowSprite("spr_CM_Engineer_BarEdgeGlow_InCombat3")
-  else
-    wndBarText:SetTextColor("UI_AlphaPercent0")
-    -- wndBar:SetFullSprite("spr_CM_Engineer_BarFill_OutOfCombat")
-    -- wndBar:SetGlowSprite("spr_CM_Engineer_BarEdgeGlow_OutOfCombat")
-  end
-
-  if GameLib.IsCurrentInnateAbilityActive() then
-    -- wndBar:SetFullSprite("spr_CM_Engineer_BarFill_InCombat3")
-    -- wndMainResourceFrame:SetSprite("spr_CM_Engineer_Base_Innate")
-  elseif bInCombat then
-    -- wndMainResourceFrame:SetSprite("spr_CM_Engineer_Base_InCombat")
-  else
-    -- wndMainResourceFrame:SetSprite("spr_CM_Engineer_Base_OutOfCombat")
-  end
-
-  self:HelperToggleVisibiltyPreferences(self.wndMain, unitPlayer)
+function VikingClassResources:OnEnteredCombat()
 end
 
-function VikingClassResources:OnStanceBtn(wndHandler, wndControl)
-  Pet_SetStance(0, tonumber(wndHandler:GetData())) -- First arg is for the pet ID, 0 means all engineer pets
-  self.wndMain:FindChild("StanceMenuOpenerBtn"):SetCheck(false)
-  self.wndMain:FindChild("PetText"):SetText(wndHandler:GetText())
-  self.wndMain:FindChild("PetText"):SetData(wndHandler:GetText())
+
+function VikingClassResources:OnOutOfCombatFade()
 end
 
-function VikingClassResources:OnPetBtn(wndHandler, wndControl)
-   local wndPetContainer = self.wndMain:FindChild("VikingPetBarContainer")
-   wndPetContainer:Show(not wndPetContainer:IsShown())
-end
-
-function VikingClassResources:OnShowActionBarShortcut(nWhichBar, bIsVisible, nNumShortcuts)
-  if nWhichBar ~= 1 or not self.wndMain or not self.wndMain:IsValid() then -- 1 is hardcoded to be the engineer pet bar
-    return
-  end
-
-  self.wndMain:FindChild("PetBtn"):Show(bIsVisible)
-  self.wndMain:FindChild("VikingPetBarContainer"):Show(bIsVisible)
-end
-
-function VikingClassResources:OnEngineerPetBtnMouseEnter(wndHandler, wndControl)
-  wndHandler:SetBGColor("white")
-  local strHover = ""
-  local strWindowName = wndHandler:GetName()
-  if strWindowName == "ActionBarShortcut.12" then
-    strHover = Apollo.GetString("VikingClassResources_Engineer_PetAttack")
-  elseif strWindowName == "ActionBarShortcut.13" then
-    strHover = Apollo.GetString("CRB_Stop")
-  elseif strWindowName == "ActionBarShortcut.15" then
-    strHover = Apollo.GetString("VikingClassResources_Engineer_GoTo")
-  end
-  self.wndMain:FindChild("PetText"):SetText(strHover)
-end
-
-function VikingClassResources:OnEngineerPetBtnMouseExit(wndHandler, wndControl)
-  wndHandler:SetBGColor("UI_AlphaPercent50")
-  self.wndMain:FindChild("PetText"):SetText(self.wndMain:FindChild("PetText"):GetData() or "")
-end
 
 -----------------------------------------------------------------------------------------------
 -- Helpers
 -----------------------------------------------------------------------------------------------
+
+function VikingClassResources:ShowInnate()
+  local bInnate = GameLib.IsCurrentInnateAbilityActive()
+  self.wndMain:FindChild("InnateGlow"):Show(bInnate)
+end
 
 function VikingClassResources:HelperToggleVisibiltyPreferences(wndParent, unitPlayer)
   -- TODO: REFACTOR: Only need to update this on Combat Enter/Exit
