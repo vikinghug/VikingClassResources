@@ -30,7 +30,7 @@ local tResourceType = {
   [2] = 1,
   [3] = 1,
   [4] = 1,
-  [5] = 4,
+  [5] = 3,
   [7] = 4
 }
 
@@ -128,9 +128,10 @@ function VikingClassResources:OnUpdateTimer()
 
 end
 
+
 function VikingClassResources:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
-  local nProgressMax     = nResourceMax and nResourceMax or math.floor(unitPlayer:GetMaxMana())
   local nProgressCurrent = nResourceCurrent and nResourceCurrent or math.floor(unitPlayer:GetMana())
+  local nProgressMax     = nResourceMax and nResourceMax or math.floor(unitPlayer:GetMaxMana())
   local className        = tClassName[self.eClassID]
 
   self.wndMain:FindChild("PrimaryProgressBar"):SetMax(nProgressMax)
@@ -255,9 +256,8 @@ end
 -- STALKER
 
 function VikingClassResources:UpdateStalkerResources(unitPlayer, nResourceMax, nResourceCurrent)
-  Print("UpdateStalkerResources!!!")
-  self:UpdateProgressBar(unitPlayer)
-
+  self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
+  self:ShowInnate()
 end
 
 
