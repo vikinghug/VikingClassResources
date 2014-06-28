@@ -187,7 +187,8 @@ end
 -- ENGINEER
 
 function VikingClassResources:UpdateEngineerResources(unitPlayer, nResourceMax, nResourceCurrent)
-  Print("UpdateEngineerResources!!!")
+  self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
+  self:ShowInnate()
 
 end
 
