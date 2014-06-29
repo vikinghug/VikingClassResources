@@ -4,4 +4,5 @@
   <Form Name="VikingClassResources.xml"/>
   <ReplaceAddon Name="ClassResources"/>
   <ReplaceAddon Name="TechWarrior"/>
+  <ReplaceAddon Name="StalkerResource"/>
 </Addon>

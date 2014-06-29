@@ -1,48 +1,79 @@
 require "Window"
 require "ApolloTimer"
 
-local VikingClassResources = {}
+local VikingClassResources = {
+  _VERSION = 'VikingClassResources.lua 0.2.0',
+  _URL     = 'https://github.com/vikinghug/VikingClassResources',
+  _DESCRIPTION = '',
+  _LICENSE = [[
+    MIT LICENSE
 
--- local knEngineerPetGroupId = 298 -- TODO Hardcoded engineer pet grouping
+    Copyright (c) 2014 Kevin Altman
 
--- local ktEngineerStanceToShortString =
--- {
---   [0] = "",
---   [1] = Apollo.GetString("EngineerResource_Aggro"),
---   [2] = Apollo.GetString("EngineerResource_Defend"),
---   [3] = Apollo.GetString("EngineerResource_Passive"),
---   [4] = Apollo.GetString("EngineerResource_Assist"),
---   [5] = Apollo.GetString("EngineerResource_Stay"),
--- }
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject to
+    the following conditions:
 
--- medic 4, warrior 1, stalker 5, engineer 2
-local tClassName = {
-  [1] = "Warrior",
-  [2] = "Engineer",
-  [3] = "Esper",
-  [4] = "Medic",
-  [5] = "Stalker",
-  [7] = "Spellslinger"
+    The above copyright notice and this permission notice shall be included
+    in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  ]]
+}
+
+-- GameLib.CodeEnumClass.Warrior      = 1
+-- GameLib.CodeEnumClass.Engineer     = 2
+-- GameLib.CodeEnumClass.Esper        = 3
+-- GameLib.CodeEnumClass.Medic        = 4
+-- GameLib.CodeEnumClass.Stalker      = 5
+-- GameLib.CodeEnumClass.Spellslinger = 7
+
+ local tClassName = {
+  [GameLib.CodeEnumClass.Warrior]      = "Warrior",
+  [GameLib.CodeEnumClass.Engineer]     = "Engineer",
+  [GameLib.CodeEnumClass.Esper]        = "Esper",
+  [GameLib.CodeEnumClass.Medic]        = "Medic",
+  [GameLib.CodeEnumClass.Stalker]      = "Stalker",
+  [GameLib.CodeEnumClass.Spellslinger] = "Spellslinger"
 }
 
 local tResourceType = {
-  [1] = 1,
-  [2] = 1,
-  [3] = 1,
-  [4] = 1,
-  [5] = 3,
-  [7] = 4
+  [GameLib.CodeEnumClass.Warrior]      = 1,
+  [GameLib.CodeEnumClass.Engineer]     = 1,
+  [GameLib.CodeEnumClass.Esper]        = 1,
+  [GameLib.CodeEnumClass.Medic]        = 1,
+  [GameLib.CodeEnumClass.Stalker]      = 3,
+  [GameLib.CodeEnumClass.Spellslinger] = 4
+}
+
+local tInnateTime = {
+  [GameLib.CodeEnumClass.Warrior]      = 8,
+  [GameLib.CodeEnumClass.Engineer]     = 10.5,
+  [GameLib.CodeEnumClass.Esper]        = 0,
+  [GameLib.CodeEnumClass.Medic]        = 0,
+  [GameLib.CodeEnumClass.Stalker]      = 0,
+  [GameLib.CodeEnumClass.Spellslinger] = 0
 }
 
 function VikingClassResources:new(o)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
-    return o
+  o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+  return o
 end
 
 function VikingClassResources:Init()
-    Apollo.RegisterAddon(self, nil, nil, {"VikingActionBarFrame"})
+  Apollo.RegisterAddon(self, nil, nil, {"VikingActionBarFrame"})
 end
 
 function VikingClassResources:OnLoad()
@@ -96,7 +127,6 @@ function VikingClassResources:CreateClassResources()
 
   self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingClassResourceForm", g_wndActionBarResources, self)
   self.wndMain:ToFront()
-  --
 end
 
 
@@ -116,7 +146,6 @@ function VikingClassResources:ResizeResourceNodes(nResourceMax)
 end
 
 function VikingClassResources:OnUpdateTimer()
-
   local unitPlayer = GameLib.GetPlayerUnit()
   local className  = tClassName[self.eClassID]
   local resourceID = tResourceType[self.eClassID]
@@ -130,13 +159,14 @@ end
 
 
 function VikingClassResources:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
-  local nProgressCurrent = nResourceCurrent and nResourceCurrent or math.floor(unitPlayer:GetMana())
-  local nProgressMax     = nResourceMax and nResourceMax or math.floor(unitPlayer:GetMaxMana())
-  local className        = tClassName[self.eClassID]
+  local wndPrimaryProgress = self.wndMain:FindChild("PrimaryProgressBar")
+  local nProgressCurrent   = nResourceCurrent and nResourceCurrent or math.floor(unitPlayer:GetMana())
+  local nProgressMax       = nResourceMax and nResourceMax or math.floor(unitPlayer:GetMaxMana())
+  local className          = tClassName[self.eClassID]
 
-  self.wndMain:FindChild("PrimaryProgressBar"):SetMax(nProgressMax)
-  self.wndMain:FindChild("PrimaryProgressBar"):SetProgress(nProgressCurrent)
-  self.wndMain:FindChild("PrimaryProgressBar"):SetTooltip(String_GetWeaselString(Apollo.GetString( className .. "Resource_FocusTooltip" ), nProgressCurrent, nProgressMax))
+  wndPrimaryProgress:SetMax(nProgressMax)
+  wndPrimaryProgress:SetProgress(nProgressCurrent)
+  wndPrimaryProgress:SetTooltip(String_GetWeaselString(Apollo.GetString( className .. "Resource_FocusTooltip" ), nProgressCurrent, nProgressMax))
   self.wndMain:FindChild("PrimaryProgressText"):SetText(nProgressCurrent == nProgressMax and "" or (math.floor(nProgressCurrent / nProgressMax * 100).."%"))
 
 end
@@ -147,57 +177,49 @@ end
 
 
 function VikingClassResources:UpdateWarriorResources(unitPlayer, nResourceMax, nResourceCurrent)
-  local bOverdrive           = GameLib.IsOverdriveActive()
+  local bInnate              = GameLib.IsOverdriveActive()
   local wndPrimaryProgress   = self.wndMain:FindChild("PrimaryProgressBar")
   local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
   local unitPlayer           = GameLib.GetPlayerUnit()
 
+  -- Primary Resource
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
+  wndPrimaryProgress:Show(not self.bInnateActive)
 
-  if bOverdrive and not self.bOverDriveActive then
-    self.bOverDriveActive = true
-    wndSecondaryProgress:SetMax(100)
-    wndSecondaryProgress:SetProgress(100)
+  -- Innate Bar
+  wndSecondaryProgress:Show(self.bInnateActive)
+  self:UpdateInnateProgress(bInnate)
 
-    self.WarriorOverdriveTick = ApolloTimer.Create(0.01, true, "OnWarriorOverdriveTick", self)
-    self.WarriorOverdriveDone = ApolloTimer.Create(8, false, "OnWarriorOverdriveDone", self)
-  end
-
-  wndSecondaryProgress:Show(self.bOverDriveActive)
-  wndPrimaryProgress:Show(not self.bOverDriveActive)
-
-
-  self.wndMain:FindChild("InnateGlow"):Show(bOverdrive)
+  -- Innate State Indicator
+  self.wndMain:FindChild("InnateGlow"):Show(bInnate)
 
 end
-
-function VikingClassResources:OnWarriorOverdriveTick()
-  self.wndMain:FindChild("SecondaryProgressBar"):SetProgress(0, 8)
-end
-
-function VikingClassResources:OnWarriorOverdriveDone()
-  self.bOverDriveActive = false
-
-  self.WarriorOverdriveTick:Stop()
-end
-
 
 
 --
 -- ENGINEER
 
 function VikingClassResources:UpdateEngineerResources(unitPlayer, nResourceMax, nResourceCurrent)
-  Print("UpdateEngineerResources!!!")
+  local bInnate              = GameLib.IsCurrentInnateAbilityActive()
+  local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
+
+  -- Primary Resource
+  self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
+
+  -- Innate Bar
+  self:UpdateInnateProgress(bInnate)
+
+  -- Innate State Indicator
+  self:ShowInnateIndicator(bInnate)
 
 end
-
 
 --
 -- ESPER
 
 function VikingClassResources:UpdateEsperResources(unitPlayer, nResourceMax, nResourceCurrent)
 
-  self:UpdateProgressBar(unitPlayer)
+  -- Primary Resource (Psi Points)
   self:ResizeResourceNodes(nResourceMax)
 
   for i = 1, nResourceMax do
@@ -208,7 +230,14 @@ function VikingClassResources:UpdateEsperResources(unitPlayer, nResourceMax, nRe
     wndNodeProgress:SetProgress(nShow)
   end
 
-  self:ShowInnate()
+
+  -- Secondary Resource (Focus)
+  self:UpdateProgressBar(unitPlayer)
+
+
+  -- Innate State Indicator
+  self:ShowInnateIndicator()
+
 end
 
 
@@ -220,9 +249,13 @@ function VikingClassResources:UpdateMedicResources(unitPlayer, nResourceMax, nRe
   local nPartialMax   = 3
   local unitPlayer    = GameLib.GetPlayerUnit()
   local nPartialCount = 0
+
+  --
+  -- Primary Resource
   self:UpdateProgressBar(unitPlayer)
 
-
+  -- Primary / Partial Resource
+  --   This is a bit tricky, a buff is used to show partial fill on the primary resource
   tBuffs = unitPlayer:GetBuffs()
 
   for idx, tCurrBuffData in pairs(tBuffs.arBeneficial or {}) do
@@ -245,9 +278,11 @@ function VikingClassResources:UpdateMedicResources(unitPlayer, nResourceMax, nRe
     local wndNodeProgress = self.wndMain:FindChild("Node"..i):FindChild("NodeProgress")
     wndNodeProgress:SetMax(nPartialMax)
     wndNodeProgress:SetProgress(nProgress)
-
-    self:ShowInnate()
   end
+
+  -- Innate State Indicator
+  self:ShowInnateIndicator()
+
 end
 
 
@@ -256,8 +291,12 @@ end
 -- STALKER
 
 function VikingClassResources:UpdateStalkerResources(unitPlayer, nResourceMax, nResourceCurrent)
+
+  -- Primary Resource
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
-  self:ShowInnate()
+
+  -- Innate State Indicator
+  self:ShowInnateIndicator()
 end
 
 
@@ -270,7 +309,13 @@ function VikingClassResources:UpdateSpellslingerResources(unitPlayer, nResourceM
   local nNodes            = 4
   local unitPlayer        = GameLib.GetPlayerUnit()
   local nNodeProgressSize = nResourceMax / nNodes
+
+
+  -- Primary Resource
   self:UpdateProgressBar(unitPlayer)
+
+  -- Innate State Indicator
+  self:ShowInnateIndicator()
 
   for i = 1, nNodes do
     local nPartialProgress = nResourceCurrent - (nNodeProgressSize * (i - 1))
@@ -279,7 +324,6 @@ function VikingClassResources:UpdateSpellslingerResources(unitPlayer, nResourceM
     wndNodeProgress:SetProgress(nPartialProgress, nResourceMax)
   end
 
-  self:ShowInnate()
 end
 
 
@@ -295,14 +339,58 @@ end
 -- Helpers
 -----------------------------------------------------------------------------------------------
 
-function VikingClassResources:ShowInnate()
+--
+-- UpdateInnateProgress
+--
+-- Innates that have timers use this method to indicate their decay progress
+
+function VikingClassResources:UpdateInnateProgress(bInnate)
+
+  if bInnate and not self.bInnateActive then
+
+    self.bInnateActive = true
+
+    local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
+    local nProgressMax         = tInnateTime[self.eClassID] * 10
+    wndSecondaryProgress:Show(true)
+    wndSecondaryProgress:SetMax(nProgressMax)
+    wndSecondaryProgress:SetProgress(nProgressMax)
+
+    self.InnateTimerTick = ApolloTimer.Create(0.01, true, "OnInnateTimerTick", self)
+    self.InnateTimerDone = ApolloTimer.Create(tInnateTime[self.eClassID], false, "OnInnateTimerDone", self)
+  end
+end
+
+function VikingClassResources:OnInnateTimerTick()
+  self.wndMain:FindChild("SecondaryProgressBar"):SetProgress(0, 10)
+end
+
+function VikingClassResources:OnInnateTimerDone()
+  self.bInnateActive = false
+  self.InnateTimerTick:Stop()
+  self.wndMain:FindChild("SecondaryProgressBar"):Show(false)
+end
+
+--
+-- ShowInnateIndicator
+--
+--   The animated sprite shown when your Innate is active
+
+function VikingClassResources:ShowInnateIndicator()
   local bInnate = GameLib.IsCurrentInnateAbilityActive()
   self.wndMain:FindChild("InnateGlow"):Show(bInnate)
 end
 
+
+
+
+--
+--
+--
+--
 function VikingClassResources:HelperToggleVisibiltyPreferences(wndParent, unitPlayer)
   -- TODO: REFACTOR: Only need to update this on Combat Enter/Exit
-  --Toggle Visibility based on ui preference
+  -- Toggle Visibility based on ui preference
   local nVisibility = Apollo.GetConsoleVariable("hud.ResourceBarDisplay")
 
   if nVisibility == 2 then --always off
@@ -316,6 +404,11 @@ function VikingClassResources:HelperToggleVisibiltyPreferences(wndParent, unitPl
   end
 end
 
+
+--
+--
+--
+--
 function VikingClassResources:OnGeneratePetCommandTooltip(wndControl, wndHandler, eType, arg1, arg2)
   local xml = nil
   if eType == Tooltip.TooltipGenerateType_PetCommand then
