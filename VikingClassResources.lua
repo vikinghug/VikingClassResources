@@ -159,13 +159,14 @@ end
 
 
 function VikingClassResources:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
-  local nProgressCurrent = nResourceCurrent and nResourceCurrent or math.floor(unitPlayer:GetMana())
-  local nProgressMax     = nResourceMax and nResourceMax or math.floor(unitPlayer:GetMaxMana())
-  local className        = tClassName[self.eClassID]
+  local wndPrimaryProgress = self.wndMain:FindChild("PrimaryProgressBar")
+  local nProgressCurrent   = nResourceCurrent and nResourceCurrent or math.floor(unitPlayer:GetMana())
+  local nProgressMax       = nResourceMax and nResourceMax or math.floor(unitPlayer:GetMaxMana())
+  local className          = tClassName[self.eClassID]
 
-  self.wndMain:FindChild("PrimaryProgressBar"):SetMax(nProgressMax)
-  self.wndMain:FindChild("PrimaryProgressBar"):SetProgress(nProgressCurrent)
-  self.wndMain:FindChild("PrimaryProgressBar"):SetTooltip(String_GetWeaselString(Apollo.GetString( className .. "Resource_FocusTooltip" ), nProgressCurrent, nProgressMax))
+  wndPrimaryProgress:SetMax(nProgressMax)
+  wndPrimaryProgress:SetProgress(nProgressCurrent)
+  wndPrimaryProgress:SetTooltip(String_GetWeaselString(Apollo.GetString( className .. "Resource_FocusTooltip" ), nProgressCurrent, nProgressMax))
   self.wndMain:FindChild("PrimaryProgressText"):SetText(nProgressCurrent == nProgressMax and "" or (math.floor(nProgressCurrent / nProgressMax * 100).."%"))
 
 end
