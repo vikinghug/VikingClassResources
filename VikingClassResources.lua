@@ -57,7 +57,7 @@ local tResourceType = {
 }
 
 local tInnateTime = {
-  [GameLib.CodeEnumClass.Warrior]      = 8.5,
+  [GameLib.CodeEnumClass.Warrior]      = 8,
   [GameLib.CodeEnumClass.Engineer]     = 10.5,
   [GameLib.CodeEnumClass.Esper]        = 0,
   [GameLib.CodeEnumClass.Medic]        = 0,
@@ -345,14 +345,16 @@ end
 -- Innates that have timers use this method to indicate their decay progress
 
 function VikingClassResources:UpdateInnateProgress(bInnate)
+
   if bInnate and not self.bInnateActive then
 
     self.bInnateActive = true
 
     local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
+    local nProgressMax         = tInnateTime[self.eClassID] * 10
     wndSecondaryProgress:Show(true)
-    wndSecondaryProgress:SetMax(100)
-    wndSecondaryProgress:SetProgress(100)
+    wndSecondaryProgress:SetMax(nProgressMax)
+    wndSecondaryProgress:SetProgress(nProgressMax)
 
     self.InnateTimerTick = ApolloTimer.Create(0.01, true, "OnInnateTimerTick", self)
     self.InnateTimerDone = ApolloTimer.Create(tInnateTime[self.eClassID], false, "OnInnateTimerDone", self)
@@ -360,7 +362,7 @@ function VikingClassResources:UpdateInnateProgress(bInnate)
 end
 
 function VikingClassResources:OnInnateTimerTick()
-  self.wndMain:FindChild("SecondaryProgressBar"):SetProgress(0, tInnateTime[self.eClassID])
+  self.wndMain:FindChild("SecondaryProgressBar"):SetProgress(0, 10)
 end
 
 function VikingClassResources:OnInnateTimerDone()
