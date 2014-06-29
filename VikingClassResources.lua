@@ -31,23 +31,38 @@ local VikingClassResources = {
   ]]
 }
 
+-- GameLib.CodeEnumClass.Warrior      = 1
+-- GameLib.CodeEnumClass.Engineer     = 2
+-- GameLib.CodeEnumClass.Esper        = 3
+-- GameLib.CodeEnumClass.Medic        = 4
+-- GameLib.CodeEnumClass.Stalker      = 5
+-- GameLib.CodeEnumClass.Spellslinger = 7
 
-local tClassName = {
-  [1] = "Warrior",
-  [2] = "Engineer",
-  [3] = "Esper",
-  [4] = "Medic",
-  [5] = "Stalker",
-  [7] = "Spellslinger"
+ local tClassName = {
+  [GameLib.CodeEnumClass.Warrior]      = "Warrior",
+  [GameLib.CodeEnumClass.Engineer]     = "Engineer",
+  [GameLib.CodeEnumClass.Esper]        = "Esper",
+  [GameLib.CodeEnumClass.Medic]        = "Medic",
+  [GameLib.CodeEnumClass.Stalker]      = "Stalker",
+  [GameLib.CodeEnumClass.Spellslinger] = "Spellslinger"
 }
 
 local tResourceType = {
-  [1] = 1,
-  [2] = 1,
-  [3] = 1,
-  [4] = 1,
-  [5] = 3,
-  [7] = 4
+  [GameLib.CodeEnumClass.Warrior]      = 1,
+  [GameLib.CodeEnumClass.Engineer]     = 1,
+  [GameLib.CodeEnumClass.Esper]        = 1,
+  [GameLib.CodeEnumClass.Medic]        = 1,
+  [GameLib.CodeEnumClass.Stalker]      = 3,
+  [GameLib.CodeEnumClass.Spellslinger] = 4
+}
+
+local tInnateTime = {
+  [GameLib.CodeEnumClass.Warrior]      = 8.5,
+  [GameLib.CodeEnumClass.Engineer]     = 10.5,
+  [GameLib.CodeEnumClass.Esper]        = 0,
+  [GameLib.CodeEnumClass.Medic]        = 0,
+  [GameLib.CodeEnumClass.Stalker]      = 0,
+  [GameLib.CodeEnumClass.Spellslinger] = 0
 }
 
 function VikingClassResources:new(o)
