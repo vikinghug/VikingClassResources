@@ -177,58 +177,49 @@ end
 
 
 function VikingClassResources:UpdateWarriorResources(unitPlayer, nResourceMax, nResourceCurrent)
-  local bOverdrive           = GameLib.IsOverdriveActive()
+  local bInnate              = GameLib.IsOverdriveActive()
   local wndPrimaryProgress   = self.wndMain:FindChild("PrimaryProgressBar")
   local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
   local unitPlayer           = GameLib.GetPlayerUnit()
 
+  -- Primary Resource
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
+  wndPrimaryProgress:Show(not self.bInnateActive)
 
-  if bOverdrive and not self.bOverDriveActive then
-    self.bOverDriveActive = true
-    wndSecondaryProgress:SetMax(100)
-    wndSecondaryProgress:SetProgress(100)
+  -- Innate Bar
+  wndSecondaryProgress:Show(self.bInnateActive)
+  self:UpdateInnateProgress(bInnate)
 
-    self.WarriorOverdriveTick = ApolloTimer.Create(0.01, true, "OnWarriorOverdriveTick", self)
-    self.WarriorOverdriveDone = ApolloTimer.Create(8, false, "OnWarriorOverdriveDone", self)
-  end
-
-  wndSecondaryProgress:Show(self.bOverDriveActive)
-  wndPrimaryProgress:Show(not self.bOverDriveActive)
-
-
-  self.wndMain:FindChild("InnateGlow"):Show(bOverdrive)
+  -- Innate State Indicator
+  self.wndMain:FindChild("InnateGlow"):Show(bInnate)
 
 end
-
-function VikingClassResources:OnWarriorOverdriveTick()
-  self.wndMain:FindChild("SecondaryProgressBar"):SetProgress(0, 8)
-end
-
-function VikingClassResources:OnWarriorOverdriveDone()
-  self.bOverDriveActive = false
-
-  self.WarriorOverdriveTick:Stop()
-end
-
 
 
 --
 -- ENGINEER
 
 function VikingClassResources:UpdateEngineerResources(unitPlayer, nResourceMax, nResourceCurrent)
+  local bInnate              = GameLib.IsCurrentInnateAbilityActive()
+  local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
+
+  -- Primary Resource
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
-  self:ShowInnate()
+
+  -- Innate Bar
+  self:UpdateInnateProgress(bInnate)
+
+  -- Innate State Indicator
+  self:ShowInnateIndicator(bInnate)
 
 end
-
 
 --
 -- ESPER
 
 function VikingClassResources:UpdateEsperResources(unitPlayer, nResourceMax, nResourceCurrent)
 
-  self:UpdateProgressBar(unitPlayer)
+  -- Primary Resource (Psi Points)
   self:ResizeResourceNodes(nResourceMax)
 
   for i = 1, nResourceMax do
@@ -239,7 +230,14 @@ function VikingClassResources:UpdateEsperResources(unitPlayer, nResourceMax, nRe
     wndNodeProgress:SetProgress(nShow)
   end
 
-  self:ShowInnate()
+
+  -- Secondary Resource (Focus)
+  self:UpdateProgressBar(unitPlayer)
+
+
+  -- Innate State Indicator
+  self:ShowInnateIndicator()
+
 end
 
 
@@ -251,9 +249,13 @@ function VikingClassResources:UpdateMedicResources(unitPlayer, nResourceMax, nRe
   local nPartialMax   = 3
   local unitPlayer    = GameLib.GetPlayerUnit()
   local nPartialCount = 0
+
+  --
+  -- Primary Resource
   self:UpdateProgressBar(unitPlayer)
 
-
+  -- Primary / Partial Resource
+  --   This is a bit tricky, a buff is used to show partial fill on the primary resource
   tBuffs = unitPlayer:GetBuffs()
 
   for idx, tCurrBuffData in pairs(tBuffs.arBeneficial or {}) do
@@ -276,9 +278,11 @@ function VikingClassResources:UpdateMedicResources(unitPlayer, nResourceMax, nRe
     local wndNodeProgress = self.wndMain:FindChild("Node"..i):FindChild("NodeProgress")
     wndNodeProgress:SetMax(nPartialMax)
     wndNodeProgress:SetProgress(nProgress)
-
-    self:ShowInnate()
   end
+
+  -- Innate State Indicator
+  self:ShowInnateIndicator()
+
 end
 
 
@@ -287,8 +291,12 @@ end
 -- STALKER
 
 function VikingClassResources:UpdateStalkerResources(unitPlayer, nResourceMax, nResourceCurrent)
+
+  -- Primary Resource
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
-  self:ShowInnate()
+
+  -- Innate State Indicator
+  self:ShowInnateIndicator()
 end
 
 
@@ -301,7 +309,13 @@ function VikingClassResources:UpdateSpellslingerResources(unitPlayer, nResourceM
   local nNodes            = 4
   local unitPlayer        = GameLib.GetPlayerUnit()
   local nNodeProgressSize = nResourceMax / nNodes
+
+
+  -- Primary Resource
   self:UpdateProgressBar(unitPlayer)
+
+  -- Innate State Indicator
+  self:ShowInnateIndicator()
 
   for i = 1, nNodes do
     local nPartialProgress = nResourceCurrent - (nNodeProgressSize * (i - 1))
@@ -310,7 +324,6 @@ function VikingClassResources:UpdateSpellslingerResources(unitPlayer, nResourceM
     wndNodeProgress:SetProgress(nPartialProgress, nResourceMax)
   end
 
-  self:ShowInnate()
 end
 
 
@@ -326,14 +339,56 @@ end
 -- Helpers
 -----------------------------------------------------------------------------------------------
 
-function VikingClassResources:ShowInnate()
+--
+-- UpdateInnateProgress
+--
+-- Innates that have timers use this method to indicate their decay progress
+
+function VikingClassResources:UpdateInnateProgress(bInnate)
+  if bInnate and not self.bInnateActive then
+
+    self.bInnateActive = true
+
+    local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
+    wndSecondaryProgress:Show(true)
+    wndSecondaryProgress:SetMax(100)
+    wndSecondaryProgress:SetProgress(100)
+
+    self.InnateTimerTick = ApolloTimer.Create(0.01, true, "OnInnateTimerTick", self)
+    self.InnateTimerDone = ApolloTimer.Create(tInnateTime[self.eClassID], false, "OnInnateTimerDone", self)
+  end
+end
+
+function VikingClassResources:OnInnateTimerTick()
+  self.wndMain:FindChild("SecondaryProgressBar"):SetProgress(0, tInnateTime[self.eClassID])
+end
+
+function VikingClassResources:OnInnateTimerDone()
+  self.bInnateActive = false
+  self.InnateTimerTick:Stop()
+  self.wndMain:FindChild("SecondaryProgressBar"):Show(false)
+end
+
+--
+-- ShowInnateIndicator
+--
+--   The animated sprite shown when your Innate is active
+
+function VikingClassResources:ShowInnateIndicator()
   local bInnate = GameLib.IsCurrentInnateAbilityActive()
   self.wndMain:FindChild("InnateGlow"):Show(bInnate)
 end
 
+
+
+
+--
+--
+--
+--
 function VikingClassResources:HelperToggleVisibiltyPreferences(wndParent, unitPlayer)
   -- TODO: REFACTOR: Only need to update this on Combat Enter/Exit
-  --Toggle Visibility based on ui preference
+  -- Toggle Visibility based on ui preference
   local nVisibility = Apollo.GetConsoleVariable("hud.ResourceBarDisplay")
 
   if nVisibility == 2 then --always off
