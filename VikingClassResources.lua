@@ -66,14 +66,14 @@ local tInnateTime = {
 }
 
 function VikingClassResources:new(o)
-    o = o or {}
-    setmetatable(o, self)
-    self.__index = self
-    return o
+  o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+  return o
 end
 
 function VikingClassResources:Init()
-    Apollo.RegisterAddon(self, nil, nil, {"VikingActionBarFrame"})
+  Apollo.RegisterAddon(self, nil, nil, {"VikingActionBarFrame"})
 end
 
 function VikingClassResources:OnLoad()
@@ -127,7 +127,6 @@ function VikingClassResources:CreateClassResources()
 
   self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingClassResourceForm", g_wndActionBarResources, self)
   self.wndMain:ToFront()
-  --
 end
 
 
@@ -147,7 +146,6 @@ function VikingClassResources:ResizeResourceNodes(nResourceMax)
 end
 
 function VikingClassResources:OnUpdateTimer()
-
   local unitPlayer = GameLib.GetPlayerUnit()
   local className  = tClassName[self.eClassID]
   local resourceID = tResourceType[self.eClassID]
@@ -348,6 +346,11 @@ function VikingClassResources:HelperToggleVisibiltyPreferences(wndParent, unitPl
   end
 end
 
+
+--
+--
+--
+--
 function VikingClassResources:OnGeneratePetCommandTooltip(wndControl, wndHandler, eType, arg1, arg2)
   local xml = nil
   if eType == Tooltip.TooltipGenerateType_PetCommand then
