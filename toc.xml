@@ -3,6 +3,6 @@
   <Script Name="VikingClassResources.lua"/>
   <Form Name="VikingClassResources.xml"/>
   <ReplaceAddon Name="ClassResources"/>
-  <ReplaceAddon Name="TechWarrior"/>
+  <ReplaceAddon Name="WarriorResource"/>
   <ReplaceAddon Name="StalkerResource"/>
 </Addon>
