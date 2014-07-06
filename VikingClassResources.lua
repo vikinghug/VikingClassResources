@@ -202,10 +202,15 @@ end
 function VikingClassResources:UpdateEngineerResources(unitPlayer, nResourceMax, nResourceCurrent)
   local bInnate              = GameLib.IsCurrentInnateAbilityActive()
   local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
+  local progressBar = self.wndMain:FindChild("PrimaryProgressBar")
 
   -- Primary Resource
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
-
+  if nResourceCurrent >= 30 and nResourceCurrent <= 70 then
+ 	progressBar:SetBarColor("ffff0000")
+  else
+ 	progressBar:SetBarColor("ff2fd5ac")
+  end
   -- Innate Bar
   self:UpdateInnateProgress(bInnate)
 
