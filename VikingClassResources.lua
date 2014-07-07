@@ -191,7 +191,8 @@ function VikingClassResources:UpdateWarriorResources(unitPlayer, nResourceMax, n
   self:UpdateInnateProgress(bInnate)
 
   -- Innate State Indicator
-  self.wndMain:FindChild("InnateGlow"):Show(bInnate)
+  self.wndMain:FindChild("InnateHardcore"):Show(bInnate)
+  self.wndMain:FindChild("InnateStealth"):Show(false)
 
 end
 
