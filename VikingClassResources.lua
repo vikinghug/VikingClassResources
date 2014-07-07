@@ -202,10 +202,15 @@ end
 function VikingClassResources:UpdateEngineerResources(unitPlayer, nResourceMax, nResourceCurrent)
   local bInnate              = GameLib.IsCurrentInnateAbilityActive()
   local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
+  local progressBar = self.wndMain:FindChild("PrimaryProgressBar")
 
   -- Primary Resource
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
-
+  if nResourceCurrent >= 30 and nResourceCurrent <= 70 then
+ 	progressBar:SetBarColor("ffff0000")
+  else
+ 	progressBar:SetBarColor("ff2fd5ac")
+  end
   -- Innate Bar
   self:UpdateInnateProgress(bInnate)
 
@@ -296,7 +301,7 @@ function VikingClassResources:UpdateStalkerResources(unitPlayer, nResourceMax, n
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
 
   -- Innate State Indicator
-  self:ShowInnateIndicator()
+  self:ShowInnateIndicatorStalker()
 end
 
 
@@ -379,8 +384,18 @@ end
 function VikingClassResources:ShowInnateIndicator()
   local bInnate = GameLib.IsCurrentInnateAbilityActive()
   self.wndMain:FindChild("InnateGlow"):Show(bInnate)
+  self.wndMain:FindChild("InnateStealth"):Show(false)
 end
+--
+-- ShowInnateIndicatorStalker
+--
+-- The special Sneaky text for stalkers only
 
+function VikingClassResources:ShowInnateIndicatorStalker()
+  local bInnate = GameLib.IsCurrentInnateAbilityActive()
+  self.wndMain:FindChild("InnateStealth"):Show(bInnate)
+  self.wndMain:FindChild("InnateGlow"):Show(false)
+end
 
 
 
