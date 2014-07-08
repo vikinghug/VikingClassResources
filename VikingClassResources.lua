@@ -47,6 +47,15 @@ local VikingClassResources = {
   [GameLib.CodeEnumClass.Spellslinger] = "Spellslinger"
 }
 
+local tShowNodes = {
+  [GameLib.CodeEnumClass.Warrior]      = false,
+  [GameLib.CodeEnumClass.Engineer]     = false,
+  [GameLib.CodeEnumClass.Esper]        = true,
+  [GameLib.CodeEnumClass.Medic]        = true,
+  [GameLib.CodeEnumClass.Stalker]      = true,
+  [GameLib.CodeEnumClass.Spellslinger] = true
+}
+
 local tResourceType = {
   [GameLib.CodeEnumClass.Warrior]      = 1,
   [GameLib.CodeEnumClass.Engineer]     = 1,
@@ -114,6 +123,7 @@ function VikingClassResources:OnCharacterCreated()
 
   self.eClassID =  unitPlayer:GetClassId()
 
+
   self:CreateClassResources()
 
 end
@@ -125,8 +135,24 @@ function VikingClassResources:CreateClassResources()
   Apollo.RegisterEventHandler("UnitEnteredCombat",        "OnEnteredCombat", self)
   Apollo.RegisterTimerHandler("OutOfCombatFade",          "OnOutOfCombatFade", self)
 
+
   self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingClassResourceForm", g_wndActionBarResources, self)
   self.wndMain:ToFront()
+
+
+  if self.eClassID == GameLib.CodeEnumClass.Engineer then
+    self.wndPet = Apollo.LoadForm(self.xmlDoc, "PetBarContainer", g_wndActionBarResources, self)
+    Apollo.RegisterEventHandler("ShowActionBarShortcut",    "OnShowActionBarShortcut", self)
+    self.wndPet:FindChild("StanceMenuOpenerBtn"):AttachWindow(self.wndPet:FindChild("StanceMenuBG"))
+    for idx = 1, 5 do
+      self.wndPet:FindChild("Stance"..idx):SetData(idx)
+    end
+    self:OnShowActionBarShortcut(1, IsActionBarSetVisible(1))
+  end
+
+  self.wndMain:FindChild("Nodes"):Show(tShowNodes[self.eClassID])
+
+
 end
 
 
@@ -337,6 +363,46 @@ end
 
 
 function VikingClassResources:OnOutOfCombatFade()
+end
+
+
+function VikingClassResources:OnEngineerPetBtnMouseEnter(wndHandler, wndControl)
+  wndHandler:SetBGColor("white")
+  local strHover = ""
+  local strWindowName = wndHandler:GetName()
+  if strWindowName == "ActionBarShortcut.12" then
+    strHover = Apollo.GetString("ClassResources_Engineer_PetAttack")
+  elseif strWindowName == "ActionBarShortcut.13" then
+    strHover = Apollo.GetString("CRB_Stop")
+  elseif strWindowName == "ActionBarShortcut.15" then
+    strHover = Apollo.GetString("ClassResources_Engineer_GoTo")
+  end
+  self.wndPet:FindChild("PetText"):SetText(strHover)
+end
+
+function VikingClassResources:OnEngineerPetBtnMouseExit(wndHandler, wndControl)
+  wndHandler:SetBGColor("UI_AlphaPercent50")
+  self.wndPet:FindChild("PetText"):SetText(self.wndPet:FindChild("PetText"):GetData() or "")
+end
+
+function VikingClassResources:OnPetBtn(wndHandler, wndControl)
+  self.wndPet:FindChild("PetBar"):Show(not self.wndPet:FindChild("PetBar"):IsShown())
+end
+
+function VikingClassResources:OnStanceBtn(wndHandler, wndControl)
+  Pet_SetStance(0, tonumber(wndHandler:GetData())) -- First arg is for the pet ID, 0 means all engineer pets
+  self.wndPet:FindChild("StanceMenuOpenerBtn"):SetCheck(false)
+  self.wndPet:FindChild("PetText"):SetText(wndHandler:GetText())
+  self.wndPet:FindChild("PetText"):SetData(wndHandler:GetText())
+end
+
+function VikingClassResources:OnShowActionBarShortcut(nWhichBar, bIsVisible, nNumShortcuts)
+  if nWhichBar ~= 1 or not self.wndPet or not self.wndPet:IsValid() then -- 1 is hardcoded to be the engineer pet bar
+    return
+  end
+
+  self.wndPet:FindChild("PetBtn"):Show(bIsVisible)
+  self.wndPet:FindChild("PetBar"):Show(bIsVisible)
 end
 
 
