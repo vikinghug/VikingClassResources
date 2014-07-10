@@ -100,6 +100,9 @@ function VikingClassResources:OnDocumentReady()
     return
   end
 
+  Apollo.RegisterEventHandler("WindowManagementReady"      , "OnWindowManagementReady"      , self)
+  Apollo.RegisterEventHandler("WindowManagementUpdate"     , "OnWindowManagementUpdate"     , self)
+
   self.bDocLoaded = true
   self:OnRequiredFlagsChanged()
 end
@@ -115,19 +118,31 @@ function VikingClassResources:OnRequiredFlagsChanged()
 end
 
 
+
 function VikingClassResources:OnCharacterCreated()
   local unitPlayer = GameLib.GetPlayerUnit()
   if not unitPlayer then
     return
   end
-
   self.eClassID =  unitPlayer:GetClassId()
-
 
   self:CreateClassResources()
 
 end
 
+function VikingClassResources:OnWindowManagementReady()
+  Event_FireGenericEvent("WindowManagementAdd", { wnd = self.wndMain, strName = "Class Resources"} )
+end
+
+function VikingClassResources:OnWindowManagementUpdate(tWindow)
+  if tWindow and tWindow.wnd and tWindow.wnd == self.wndMain then
+    local bMoveable = tWindow.wnd:IsStyleOn("Moveable")
+
+    tWindow.wnd:SetStyle("Sizable", bMoveable)
+    tWindow.wnd:SetStyle("RequireMetaKeyToMove", bMoveable)
+    tWindow.wnd:SetStyle("IgnoreMouse", not bMoveable)
+  end
+end
 
 function VikingClassResources:CreateClassResources()
 
@@ -136,9 +151,8 @@ function VikingClassResources:CreateClassResources()
   Apollo.RegisterTimerHandler("OutOfCombatFade",          "OnOutOfCombatFade", self)
 
 
-  self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingClassResourceForm", g_wndActionBarResources, self)
+  self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingClassResourceForm", FixedHudStratumLow, self)
   self.wndMain:ToFront()
-
 
   if self.eClassID == GameLib.CodeEnumClass.Engineer then
     self.wndPet = Apollo.LoadForm(self.xmlDoc, "PetBarContainer", g_wndActionBarResources, self)
@@ -151,7 +165,6 @@ function VikingClassResources:CreateClassResources()
   end
 
   self.wndMain:FindChild("Nodes"):Show(tShowNodes[self.eClassID])
-
 
 end
 
