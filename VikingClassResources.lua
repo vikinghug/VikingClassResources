@@ -88,8 +88,7 @@ function VikingClassResources:new(o)
 end
 
 function VikingClassResources:Init()
-  Apollo.RegisterAddon(self, nil, nil, {"VikingActionBarFrame"})
-    Apollo.RegisterAddon(self, nil, nil, {"VikingLibrary"})
+Apollo.RegisterAddon(self, nil, nil, {"VikingActionBarFrame","VikingLibrary"})
 end
 
 function VikingClassResources:OnLoad()
@@ -518,6 +517,8 @@ function VikingClassResources:OnGeneratePetCommandTooltip(wndControl, wndHandler
   end
 end
 
+local VikingClassResourcesInst = VikingClassResources:new()
+VikingClassResourcesInst:Init()
 
 -- Called when the settings form needs to be updated so it visually reflects the options
 function VikingClassResources:UpdateSettingsForm(wndContainer)
