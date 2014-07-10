@@ -1,6 +1,7 @@
 require "Window"
 require "ApolloTimer"
 
+local VikingLib
 local VikingClassResources = {
   _VERSION = 'VikingClassResources.lua 0.2.0',
   _URL     = 'https://github.com/vikinghug/VikingClassResources',
@@ -47,6 +48,15 @@ local VikingClassResources = {
   [GameLib.CodeEnumClass.Spellslinger] = "Spellslinger"
 }
 
+local tShowNodes = {
+  [GameLib.CodeEnumClass.Warrior]      = false,
+  [GameLib.CodeEnumClass.Engineer]     = false,
+  [GameLib.CodeEnumClass.Esper]        = true,
+  [GameLib.CodeEnumClass.Medic]        = true,
+  [GameLib.CodeEnumClass.Stalker]      = true,
+  [GameLib.CodeEnumClass.Spellslinger] = true
+}
+
 local tResourceType = {
   [GameLib.CodeEnumClass.Warrior]      = 1,
   [GameLib.CodeEnumClass.Engineer]     = 1,
@@ -65,6 +75,18 @@ local tInnateTime = {
   [GameLib.CodeEnumClass.Spellslinger] = 0
 }
 
+local eVikingMode =
+{
+  YesVikingmode = 1,
+  NoVikingmode = 2,
+}
+
+local tDefaultSettings =
+{
+ VikingMode = eVikingMode.YesVikingmode,
+}
+
+
 function VikingClassResources:new(o)
   o = o or {}
   setmetatable(o, self)
@@ -74,6 +96,7 @@ end
 
 function VikingClassResources:Init()
   Apollo.RegisterAddon(self, nil, nil, {"VikingActionBarFrame"})
+    Apollo.RegisterAddon(self, nil, nil, {"VikingLibrary"})
 end
 
 function VikingClassResources:OnLoad()
@@ -84,6 +107,7 @@ function VikingClassResources:OnLoad()
 
 
   Apollo.LoadSprites("VikingClassResourcesSprites.xml")
+
 end
 
 function VikingClassResources:OnDocumentReady()
@@ -114,10 +138,19 @@ function VikingClassResources:OnCharacterCreated()
 
   self.eClassID =  unitPlayer:GetClassId()
 
+
   self:CreateClassResources()
 
-end
+ if VikingLib == nil then
+    VikingLib = Apollo.GetAddon("VikingLibrary")
+  end
 
+  if VikingLib ~= nil then
+    VikingLib.Settings.RegisterSettings(self, "VikingClassResources", tDefaultSettings)
+    self.db = VikingLib.Settings.GetDatabase("VikingClassResources")
+  end
+
+  end
 
 function VikingClassResources:CreateClassResources()
 
@@ -125,10 +158,34 @@ function VikingClassResources:CreateClassResources()
   Apollo.RegisterEventHandler("UnitEnteredCombat",        "OnEnteredCombat", self)
   Apollo.RegisterTimerHandler("OutOfCombatFade",          "OnOutOfCombatFade", self)
 
+
   self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingClassResourceForm", g_wndActionBarResources, self)
   self.wndMain:ToFront()
+
+
+  if self.eClassID == GameLib.CodeEnumClass.Engineer then
+    self.wndPet = Apollo.LoadForm(self.xmlDoc, "PetBarContainer", g_wndActionBarResources, self)
+    Apollo.RegisterEventHandler("ShowActionBarShortcut",    "OnShowActionBarShortcut", self)
+    self.wndPet:FindChild("StanceMenuOpenerBtn"):AttachWindow(self.wndPet:FindChild("StanceMenuBG"))
+    for idx = 1, 5 do
+      self.wndPet:FindChild("Stance"..idx):SetData(idx)
+    end
+    self:OnShowActionBarShortcut(1, IsActionBarSetVisible(1))
+  end
+
+  self.wndMain:FindChild("Nodes"):Show(tShowNodes[self.eClassID])
 end
 
+function VikingClassResources:OnCharacterLoaded()
+  if VikingLib == nil then
+    VikingLib = Apollo.GetAddon("VikingLibrary")
+  end
+
+  if VikingLib ~= nil then
+    VikingLib.Settings.RegisterSettings(self, "VikingClassResources", tDefaultSettings)
+    self.db = VikingLib.Settings.GetDatabase("VikingClassResources")
+  end
+end
 
 function VikingClassResources:ResizeResourceNodes(nResourceMax)
   local nOffsets = {}
@@ -191,8 +248,15 @@ function VikingClassResources:UpdateWarriorResources(unitPlayer, nResourceMax, n
   self:UpdateInnateProgress(bInnate)
 
   -- Innate State Indicator
-  self.wndMain:FindChild("InnateHardcore"):Show(bInnate)
+  if self.db.Vikingmode == 1 then
+  self.wndMain:FindChild("InnateGlow"):Show(false)
   self.wndMain:FindChild("InnateStealth"):Show(false)
+  self.wndMain:FindChild("InnateHardcore"):Show(bInnate)
+    else
+  self.wndMain:FindChild("InnateGlow"):Show(bInnate)
+  self.wndMain:FindChild("InnateStealth"):Show(false)
+  self.wndMain:FindChild("InnateHardcore"):Show(false)
+  end
 
 end
 
@@ -302,7 +366,16 @@ function VikingClassResources:UpdateStalkerResources(unitPlayer, nResourceMax, n
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
 
   -- Innate State Indicator
-  self:ShowInnateIndicatorStalker()
+  local bInnate = GameLib.IsCurrentInnateAbilityActive()
+  if self.db.Vikingmode == 1 then
+  self.wndMain:FindChild("InnateGlow"):Show(false)
+  self.wndMain:FindChild("InnateStealth"):Show(bInnate)
+  self.wndMain:FindChild("InnateHardcore"):Show(false)
+    else
+  self.wndMain:FindChild("InnateGlow"):Show(bInnate)
+  self.wndMain:FindChild("InnateStealth"):Show(false)
+  self.wndMain:FindChild("InnateHardcore"):Show(false)
+  end
 end
 
 
@@ -338,6 +411,46 @@ end
 
 
 function VikingClassResources:OnOutOfCombatFade()
+end
+
+
+function VikingClassResources:OnEngineerPetBtnMouseEnter(wndHandler, wndControl)
+  wndHandler:SetBGColor("white")
+  local strHover = ""
+  local strWindowName = wndHandler:GetName()
+  if strWindowName == "ActionBarShortcut.12" then
+    strHover = Apollo.GetString("ClassResources_Engineer_PetAttack")
+  elseif strWindowName == "ActionBarShortcut.13" then
+    strHover = Apollo.GetString("CRB_Stop")
+  elseif strWindowName == "ActionBarShortcut.15" then
+    strHover = Apollo.GetString("ClassResources_Engineer_GoTo")
+  end
+  self.wndPet:FindChild("PetText"):SetText(strHover)
+end
+
+function VikingClassResources:OnEngineerPetBtnMouseExit(wndHandler, wndControl)
+  wndHandler:SetBGColor("UI_AlphaPercent50")
+  self.wndPet:FindChild("PetText"):SetText(self.wndPet:FindChild("PetText"):GetData() or "")
+end
+
+function VikingClassResources:OnPetBtn(wndHandler, wndControl)
+  self.wndPet:FindChild("PetBar"):Show(not self.wndPet:FindChild("PetBar"):IsShown())
+end
+
+function VikingClassResources:OnStanceBtn(wndHandler, wndControl)
+  Pet_SetStance(0, tonumber(wndHandler:GetData())) -- First arg is for the pet ID, 0 means all engineer pets
+  self.wndPet:FindChild("StanceMenuOpenerBtn"):SetCheck(false)
+  self.wndPet:FindChild("PetText"):SetText(wndHandler:GetText())
+  self.wndPet:FindChild("PetText"):SetData(wndHandler:GetText())
+end
+
+function VikingClassResources:OnShowActionBarShortcut(nWhichBar, bIsVisible, nNumShortcuts)
+  if nWhichBar ~= 1 or not self.wndPet or not self.wndPet:IsValid() then -- 1 is hardcoded to be the engineer pet bar
+    return
+  end
+
+  self.wndPet:FindChild("PetBtn"):Show(bIsVisible)
+  self.wndPet:FindChild("PetBar"):Show(bIsVisible)
 end
 
 
@@ -384,19 +497,17 @@ end
 
 function VikingClassResources:ShowInnateIndicator()
   local bInnate = GameLib.IsCurrentInnateAbilityActive()
+  if self.db.Vikingmode == 1 then
+  self.wndMain:FindChild("InnateGlow"):Show(false)
+  self.wndMain:FindChild("InnateStealth"):Show(false)
+  self.wndMain:FindChild("InnateHardcore"):Show(bInnate)
+    else
   self.wndMain:FindChild("InnateGlow"):Show(bInnate)
   self.wndMain:FindChild("InnateStealth"):Show(false)
+  self.wndMain:FindChild("InnateHardcore"):Show(false)
+  end
 end
---
--- ShowInnateIndicatorStalker
---
--- The special Sneaky text for stalkers only
 
-function VikingClassResources:ShowInnateIndicatorStalker()
-  local bInnate = GameLib.IsCurrentInnateAbilityActive()
-  self.wndMain:FindChild("InnateStealth"):Show(bInnate)
-  self.wndMain:FindChild("InnateGlow"):Show(false)
-end
 
 
 
@@ -442,3 +553,11 @@ end
 
 local VikingClassResourcesInst = VikingClassResources:new()
 VikingClassResourcesInst:Init()
+
+function VikingClassResources:UpdateSettingsForm(wndContainer)
+
+end
+
+function VikingClassResources:OnVikingModeCheck( wndHandler, wndControl, eMouseButton )
+  self.db.Vikingmode = eVikingMode[wndControl:GetName()]  
+end
