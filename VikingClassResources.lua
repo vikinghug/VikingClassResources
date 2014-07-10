@@ -75,17 +75,10 @@ local tInnateTime = {
   [GameLib.CodeEnumClass.Spellslinger] = 0
 }
 
-local eVikingMode =
-{
-  YesVikingmode = 1,
-  NoVikingmode = 2,
-}
-
 local tDefaultSettings =
 {
- VikingMode = eVikingMode.YesVikingmode,
+VikingMode = false,
 }
-
 
 function VikingClassResources:new(o)
   o = o or {}
@@ -140,17 +133,16 @@ function VikingClassResources:OnCharacterCreated()
 
 
   self:CreateClassResources()
-
- if VikingLib == nil then
+    if VikingLib == nil then
     VikingLib = Apollo.GetAddon("VikingLibrary")
   end
-
+ 
   if VikingLib ~= nil then
     VikingLib.Settings.RegisterSettings(self, "VikingClassResources", tDefaultSettings)
     self.db = VikingLib.Settings.GetDatabase("VikingClassResources")
   end
 
-  end
+end
 
 function VikingClassResources:CreateClassResources()
 
@@ -177,14 +169,7 @@ function VikingClassResources:CreateClassResources()
 end
 
 function VikingClassResources:OnCharacterLoaded()
-  if VikingLib == nil then
-    VikingLib = Apollo.GetAddon("VikingLibrary")
-  end
 
-  if VikingLib ~= nil then
-    VikingLib.Settings.RegisterSettings(self, "VikingClassResources", tDefaultSettings)
-    self.db = VikingLib.Settings.GetDatabase("VikingClassResources")
-  end
 end
 
 function VikingClassResources:ResizeResourceNodes(nResourceMax)
@@ -248,15 +233,9 @@ function VikingClassResources:UpdateWarriorResources(unitPlayer, nResourceMax, n
   self:UpdateInnateProgress(bInnate)
 
   -- Innate State Indicator
-  if self.db.Vikingmode == 1 then
-  self.wndMain:FindChild("InnateGlow"):Show(false)
+  self.wndMain:FindChild("InnateGlow"):Show(not self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateHardcore"):Show(self.db.VikingMode and bInnate)
   self.wndMain:FindChild("InnateStealth"):Show(false)
-  self.wndMain:FindChild("InnateHardcore"):Show(bInnate)
-    else
-  self.wndMain:FindChild("InnateGlow"):Show(bInnate)
-  self.wndMain:FindChild("InnateStealth"):Show(false)
-  self.wndMain:FindChild("InnateHardcore"):Show(false)
-  end
 
 end
 
@@ -367,15 +346,9 @@ function VikingClassResources:UpdateStalkerResources(unitPlayer, nResourceMax, n
 
   -- Innate State Indicator
   local bInnate = GameLib.IsCurrentInnateAbilityActive()
-  if self.db.Vikingmode == 1 then
-  self.wndMain:FindChild("InnateGlow"):Show(false)
-  self.wndMain:FindChild("InnateStealth"):Show(bInnate)
+  self.wndMain:FindChild("InnateGlow"):Show(not self.db.VikingMode and bInnate)
   self.wndMain:FindChild("InnateHardcore"):Show(false)
-    else
-  self.wndMain:FindChild("InnateGlow"):Show(bInnate)
-  self.wndMain:FindChild("InnateStealth"):Show(false)
-  self.wndMain:FindChild("InnateHardcore"):Show(false)
-  end
+  self.wndMain:FindChild("InnateStealth"):Show(self.db.VikingMode and bInnate)
 end
 
 
@@ -497,15 +470,9 @@ end
 
 function VikingClassResources:ShowInnateIndicator()
   local bInnate = GameLib.IsCurrentInnateAbilityActive()
-  if self.db.Vikingmode == 1 then
-  self.wndMain:FindChild("InnateGlow"):Show(false)
+  self.wndMain:FindChild("InnateGlow"):Show(not self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateHardcore"):Show(self.db.VikingMode and bInnate)
   self.wndMain:FindChild("InnateStealth"):Show(false)
-  self.wndMain:FindChild("InnateHardcore"):Show(bInnate)
-    else
-  self.wndMain:FindChild("InnateGlow"):Show(bInnate)
-  self.wndMain:FindChild("InnateStealth"):Show(false)
-  self.wndMain:FindChild("InnateHardcore"):Show(false)
-  end
 end
 
 
@@ -551,13 +518,15 @@ function VikingClassResources:OnGeneratePetCommandTooltip(wndControl, wndHandler
   end
 end
 
-local VikingClassResourcesInst = VikingClassResources:new()
-VikingClassResourcesInst:Init()
 
+-- Called when the settings form needs to be updated so it visually reflects the options
 function VikingClassResources:UpdateSettingsForm(wndContainer)
-
+local btnVikingMode = wndContainer:FindChild("VikingMode:Content:VikingMode")
+if btnVikingMode then
+btnVikingMode:SetCheck(self.db.VikingMode)
 end
-
+end
+ 
 function VikingClassResources:OnVikingModeCheck( wndHandler, wndControl, eMouseButton )
-  self.db.Vikingmode = eVikingMode[wndControl:GetName()]  
+self.db.VikingMode = wndControl:IsChecked()
 end
