@@ -1,7 +1,6 @@
 require "Window"
 require "ApolloTimer"
 
-local VikingLib
 local VikingClassResources = {
   _VERSION = 'VikingClassResources.lua 0.2.0',
   _URL     = 'https://github.com/vikinghug/VikingClassResources',
@@ -88,7 +87,7 @@ function VikingClassResources:new(o)
 end
 
 function VikingClassResources:Init()
-Apollo.RegisterAddon(self, nil, nil, {"VikingActionBarFrame","VikingLibrary"})
+  Apollo.RegisterAddon(self, nil, nil, {"VikingActionBarFrame","VikingLibrary"})
 end
 
 function VikingClassResources:OnLoad()
@@ -99,13 +98,15 @@ function VikingClassResources:OnLoad()
 
 
   Apollo.LoadSprites("VikingClassResourcesSprites.xml")
-
 end
 
 function VikingClassResources:OnDocumentReady()
   if self.xmlDoc == nil then
     return
   end
+
+  Apollo.RegisterEventHandler("WindowManagementReady"      , "OnWindowManagementReady"      , self)
+  Apollo.RegisterEventHandler("WindowManagementUpdate"     , "OnWindowManagementUpdate"     , self)
 
   self.bDocLoaded = true
   self:OnRequiredFlagsChanged()
@@ -122,17 +123,16 @@ function VikingClassResources:OnRequiredFlagsChanged()
 end
 
 
+
 function VikingClassResources:OnCharacterCreated()
   local unitPlayer = GameLib.GetPlayerUnit()
   if not unitPlayer then
     return
   end
-
   self.eClassID =  unitPlayer:GetClassId()
 
-
   self:CreateClassResources()
-    if VikingLib == nil then
+  if VikingLib == nil then
     VikingLib = Apollo.GetAddon("VikingLibrary")
   end
  
@@ -140,7 +140,20 @@ function VikingClassResources:OnCharacterCreated()
     VikingLib.Settings.RegisterSettings(self, "VikingClassResources", tDefaultSettings)
     self.db = VikingLib.Settings.GetDatabase("VikingClassResources")
   end
+end
 
+function VikingClassResources:OnWindowManagementReady()
+  Event_FireGenericEvent("WindowManagementAdd", { wnd = self.wndMain, strName = "Class Resources"} )
+end
+
+function VikingClassResources:OnWindowManagementUpdate(tWindow)
+  if tWindow and tWindow.wnd and tWindow.wnd == self.wndMain then
+    local bMoveable = tWindow.wnd:IsStyleOn("Moveable")
+
+    tWindow.wnd:SetStyle("Sizable", bMoveable)
+    tWindow.wnd:SetStyle("RequireMetaKeyToMove", bMoveable)
+    tWindow.wnd:SetStyle("IgnoreMouse", not bMoveable)
+  end
 end
 
 function VikingClassResources:CreateClassResources()
@@ -150,9 +163,8 @@ function VikingClassResources:CreateClassResources()
   Apollo.RegisterTimerHandler("OutOfCombatFade",          "OnOutOfCombatFade", self)
 
 
-  self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingClassResourceForm", g_wndActionBarResources, self)
+  self.wndMain = Apollo.LoadForm(self.xmlDoc, "VikingClassResourceForm", FixedHudStratumLow, self)
   self.wndMain:ToFront()
-
 
   if self.eClassID == GameLib.CodeEnumClass.Engineer then
     self.wndPet = Apollo.LoadForm(self.xmlDoc, "PetBarContainer", g_wndActionBarResources, self)
@@ -165,11 +177,9 @@ function VikingClassResources:CreateClassResources()
   end
 
   self.wndMain:FindChild("Nodes"):Show(tShowNodes[self.eClassID])
-end
-
-function VikingClassResources:OnCharacterLoaded()
 
 end
+
 
 function VikingClassResources:ResizeResourceNodes(nResourceMax)
   local nOffsets = {}
@@ -344,7 +354,7 @@ function VikingClassResources:UpdateStalkerResources(unitPlayer, nResourceMax, n
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
 
   -- Innate State Indicator
-  local bInnate = GameLib.IsCurrentInnateAbilityActive()
+local bInnate = GameLib.IsCurrentInnateAbilityActive()
   self.wndMain:FindChild("InnateGlow"):Show(not self.db.VikingMode and bInnate)
   self.wndMain:FindChild("InnateHardcore"):Show(false)
   self.wndMain:FindChild("InnateStealth"):Show(self.db.VikingMode and bInnate)
