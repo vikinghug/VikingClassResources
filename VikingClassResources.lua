@@ -74,9 +74,8 @@ local tInnateTime = {
   [GameLib.CodeEnumClass.Spellslinger] = 0
 }
 
-local tDefaultSettings =
-{
-VikingMode = false,
+local tDefaultSettings = {
+  VikingMode = false,
 }
 
 function VikingClassResources:new(o)
@@ -137,7 +136,7 @@ function VikingClassResources:OnCharacterCreated()
   end
  
   if VikingLib ~= nil then
-    VikingLib.Settings.RegisterSettings(self, "VikingClassResources", tDefaultSettings)
+    VikingLib.Settings.RegisterSettings(self, "VikingClassResources", "Class Resources", tDefaultSettings)
     self.db = VikingLib.Settings.GetDatabase("VikingClassResources")
   end
 end
@@ -259,11 +258,13 @@ function VikingClassResources:UpdateEngineerResources(unitPlayer, nResourceMax, 
 
   -- Primary Resource
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
+  
   if nResourceCurrent >= 30 and nResourceCurrent <= 70 then
- 	progressBar:SetBarColor("ffff0000")
+ 	  progressBar:SetBarColor("ffff0000")
   else
- 	progressBar:SetBarColor("ff2fd5ac")
+ 	  progressBar:SetBarColor("ff2fd5ac")
   end
+
   -- Innate Bar
   self:UpdateInnateProgress(bInnate)
 
@@ -384,7 +385,6 @@ function VikingClassResources:UpdateSpellslingerResources(unitPlayer, nResourceM
     wndNodeProgress:SetMax(nNodeProgressSize)
     wndNodeProgress:SetProgress(nPartialProgress, nResourceMax)
   end
-
 end
 
 
@@ -397,9 +397,13 @@ end
 
 
 function VikingClassResources:OnEngineerPetBtnMouseEnter(wndHandler, wndControl)
+
   wndHandler:SetBGColor("white")
+
   local strHover = ""
   local strWindowName = wndHandler:GetName()
+  
+
   if strWindowName == "ActionBarShortcut.12" then
     strHover = Apollo.GetString("ClassResources_Engineer_PetAttack")
   elseif strWindowName == "ActionBarShortcut.13" then
@@ -407,26 +411,35 @@ function VikingClassResources:OnEngineerPetBtnMouseEnter(wndHandler, wndControl)
   elseif strWindowName == "ActionBarShortcut.15" then
     strHover = Apollo.GetString("ClassResources_Engineer_GoTo")
   end
+
   self.wndPet:FindChild("PetText"):SetText(strHover)
 end
 
 function VikingClassResources:OnEngineerPetBtnMouseExit(wndHandler, wndControl)
+
   wndHandler:SetBGColor("UI_AlphaPercent50")
+
   self.wndPet:FindChild("PetText"):SetText(self.wndPet:FindChild("PetText"):GetData() or "")
 end
 
 function VikingClassResources:OnPetBtn(wndHandler, wndControl)
-  self.wndPet:FindChild("PetBar"):Show(not self.wndPet:FindChild("PetBar"):IsShown())
+
+  local bPetShow = self.wndPet:FindChild("PetBar"):IsShown()
+  
+  self.wndPet:FindChild("PetBar"):Show(not bPetShow)
 end
 
 function VikingClassResources:OnStanceBtn(wndHandler, wndControl)
+
   Pet_SetStance(0, tonumber(wndHandler:GetData())) -- First arg is for the pet ID, 0 means all engineer pets
+
   self.wndPet:FindChild("StanceMenuOpenerBtn"):SetCheck(false)
   self.wndPet:FindChild("PetText"):SetText(wndHandler:GetText())
   self.wndPet:FindChild("PetText"):SetData(wndHandler:GetText())
 end
 
 function VikingClassResources:OnShowActionBarShortcut(nWhichBar, bIsVisible, nNumShortcuts)
+
   if nWhichBar ~= 1 or not self.wndPet or not self.wndPet:IsValid() then -- 1 is hardcoded to be the engineer pet bar
     return
   end
@@ -453,6 +466,7 @@ function VikingClassResources:UpdateInnateProgress(bInnate)
 
     local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
     local nProgressMax         = tInnateTime[self.eClassID] * 10
+    
     wndSecondaryProgress:Show(true)
     wndSecondaryProgress:SetMax(nProgressMax)
     wndSecondaryProgress:SetProgress(nProgressMax)
