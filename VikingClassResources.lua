@@ -137,7 +137,7 @@ function VikingClassResources:OnCharacterCreated()
   end
  
   if VikingLib ~= nil then
-    VikingLib.Settings.RegisterSettings(self, "VikingClassResources", tDefaultSettings)
+    VikingLib.Settings.RegisterSettings(self, "VikingClassResources", "Class Resources", tDefaultSettings)
     self.db = VikingLib.Settings.GetDatabase("VikingClassResources")
   end
 end
