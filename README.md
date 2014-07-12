@@ -7,8 +7,7 @@
 * [VikingActionBarShortcut] (https://github.com/vikinghug/VikingActionBarShortcut)
 * [VikingMedic] (https://github.com/vikinghug/VikingMedic)
 * [VikingRecallFrame] (https://github.com/vikinghug/VikingRecallFrame)
-* [VikingStalkerResources] (https://github.com/vikinghug/VikingStalkerResource)
-* [VikingWarriorResources] (https://github.com/vikinghug/VikingWarriorResource)
+* [VikingSettings] (https://github.com/vikinghug/VikingSettings)
 
 ### Want to contribute?
 
