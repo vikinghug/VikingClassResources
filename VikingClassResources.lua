@@ -74,6 +74,11 @@ local tInnateTime = {
   [GameLib.CodeEnumClass.Spellslinger] = 0
 }
 
+local tDefaultSettings =
+{
+VikingMode = false,
+}
+
 function VikingClassResources:new(o)
   o = o or {}
   setmetatable(o, self)
@@ -82,7 +87,7 @@ function VikingClassResources:new(o)
 end
 
 function VikingClassResources:Init()
-  Apollo.RegisterAddon(self, nil, nil, {"VikingActionBarFrame"})
+  Apollo.RegisterAddon(self, nil, nil, {"VikingActionBarFrame","VikingLibrary"})
 end
 
 function VikingClassResources:OnLoad()
@@ -127,7 +132,14 @@ function VikingClassResources:OnCharacterCreated()
   self.eClassID =  unitPlayer:GetClassId()
 
   self:CreateClassResources()
-
+  if VikingLib == nil then
+    VikingLib = Apollo.GetAddon("VikingLibrary")
+  end
+ 
+  if VikingLib ~= nil then
+    VikingLib.Settings.RegisterSettings(self, "VikingClassResources", tDefaultSettings)
+    self.db = VikingLib.Settings.GetDatabase("VikingClassResources")
+  end
 end
 
 function VikingClassResources:OnWindowManagementReady()
@@ -230,7 +242,9 @@ function VikingClassResources:UpdateWarriorResources(unitPlayer, nResourceMax, n
   self:UpdateInnateProgress(bInnate)
 
   -- Innate State Indicator
-  self.wndMain:FindChild("InnateGlow"):Show(bInnate)
+  self.wndMain:FindChild("InnateGlow"):Show(not self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateHardcore"):Show(self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateStealth"):Show(false)
 
 end
 
@@ -340,7 +354,10 @@ function VikingClassResources:UpdateStalkerResources(unitPlayer, nResourceMax, n
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
 
   -- Innate State Indicator
-  self:ShowInnateIndicator()
+local bInnate = GameLib.IsCurrentInnateAbilityActive()
+  self.wndMain:FindChild("InnateGlow"):Show(not self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateHardcore"):Show(false)
+  self.wndMain:FindChild("InnateStealth"):Show(self.db.VikingMode and bInnate)
 end
 
 
@@ -462,7 +479,9 @@ end
 
 function VikingClassResources:ShowInnateIndicator()
   local bInnate = GameLib.IsCurrentInnateAbilityActive()
-  self.wndMain:FindChild("InnateGlow"):Show(bInnate)
+  self.wndMain:FindChild("InnateGlow"):Show(not self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateHardcore"):Show(self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateStealth"):Show(false)
 end
 
 
@@ -510,3 +529,15 @@ end
 
 local VikingClassResourcesInst = VikingClassResources:new()
 VikingClassResourcesInst:Init()
+
+-- Called when the settings form needs to be updated so it visually reflects the options
+function VikingClassResources:UpdateSettingsForm(wndContainer)
+local btnVikingMode = wndContainer:FindChild("VikingMode:Content:VikingMode")
+if btnVikingMode then
+btnVikingMode:SetCheck(self.db.VikingMode)
+end
+end
+ 
+function VikingClassResources:OnVikingModeCheck( wndHandler, wndControl, eMouseButton )
+self.db.VikingMode = wndControl:IsChecked()
+end
