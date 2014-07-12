@@ -1,6 +1,6 @@
 require "Window"
 require "ApolloTimer"
-
+local VikingLib
 local VikingClassResources = {
   _VERSION = 'VikingClassResources.lua 0.2.0',
   _URL     = 'https://github.com/vikinghug/VikingClassResources',
@@ -550,9 +550,10 @@ VikingClassResourcesInst:Init()
 -- Called when the settings form needs to be updated so it visually reflects the options
 function VikingClassResources:UpdateSettingsForm(wndContainer)
 local btnVikingMode = wndContainer:FindChild("VikingMode:Content:VikingMode")
-if btnVikingMode then
-btnVikingMode:SetCheck(self.db.VikingMode)
-end
+
+  if btnVikingMode then
+    btnVikingMode:SetCheck(self.db.VikingMode)
+  end
 end
  
 function VikingClassResources:OnVikingModeCheck( wndHandler, wndControl, eMouseButton )
