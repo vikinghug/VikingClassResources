@@ -260,9 +260,9 @@ function VikingClassResources:UpdateEngineerResources(unitPlayer, nResourceMax, 
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
   
   if nResourceCurrent >= 30 and nResourceCurrent <= 70 then
- 	  progressBar:SetBarColor("ffff0000")
+    progressBar:SetBarColor("ffff0000")
   else
- 	  progressBar:SetBarColor("ff2fd5ac")
+    progressBar:SetBarColor("ff2fd5ac")
   end
 
   -- Innate Bar
