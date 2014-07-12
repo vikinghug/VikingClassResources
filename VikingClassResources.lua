@@ -131,6 +131,7 @@ function VikingClassResources:OnCharacterCreated()
   self.eClassID =  unitPlayer:GetClassId()
 
   self:CreateClassResources()
+
   if VikingLib == nil then
     VikingLib = Apollo.GetAddon("VikingLibrary")
   end
@@ -167,16 +168,16 @@ function VikingClassResources:CreateClassResources()
 
   if self.eClassID == GameLib.CodeEnumClass.Engineer then
     self.wndPet = Apollo.LoadForm(self.xmlDoc, "PetBarContainer", g_wndActionBarResources, self)
-    Apollo.RegisterEventHandler("ShowActionBarShortcut",    "OnShowActionBarShortcut", self)
+    Apollo.RegisterEventHandler("ShowActionBarShortcut", "OnShowActionBarShortcut", self)
     self.wndPet:FindChild("StanceMenuOpenerBtn"):AttachWindow(self.wndPet:FindChild("StanceMenuBG"))
+    
     for idx = 1, 5 do
       self.wndPet:FindChild("Stance"..idx):SetData(idx)
     end
+
     self:OnShowActionBarShortcut(1, IsActionBarSetVisible(1))
   end
-
   self.wndMain:FindChild("Nodes"):Show(tShowNodes[self.eClassID])
-
 end
 
 
@@ -254,15 +255,15 @@ end
 function VikingClassResources:UpdateEngineerResources(unitPlayer, nResourceMax, nResourceCurrent)
   local bInnate              = GameLib.IsCurrentInnateAbilityActive()
   local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
-  local progressBar = self.wndMain:FindChild("PrimaryProgressBar")
+  local wndProgressBar       = self.wndMain:FindChild("PrimaryProgressBar")
 
   -- Primary Resource
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
   
   if nResourceCurrent >= 30 and nResourceCurrent <= 70 then
-    progressBar:SetBarColor("ffff0000")
+    wndProgressBar:SetBarColor("ffff0000")
   else
-    progressBar:SetBarColor("ff2fd5ac")
+    wndProgressBar:SetBarColor("ff2fd5ac")
   end
 
   -- Innate Bar
@@ -417,9 +418,11 @@ end
 
 function VikingClassResources:OnEngineerPetBtnMouseExit(wndHandler, wndControl)
 
+  local strPetText = self.wndPet:FindChild("PetText"):GetData() or ""
+
   wndHandler:SetBGColor("UI_AlphaPercent50")
 
-  self.wndPet:FindChild("PetText"):SetText(self.wndPet:FindChild("PetText"):GetData() or "")
+  self.wndPet:FindChild("PetText"):SetText(strPetText)
 end
 
 function VikingClassResources:OnPetBtn(wndHandler, wndControl)
