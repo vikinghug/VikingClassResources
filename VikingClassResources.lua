@@ -76,6 +76,7 @@ local tInnateTime = {
 
 local tDefaultSettings = {
   VikingMode = false,
+  ResourceText = false,
 }
 
 function VikingClassResources:new(o)
@@ -143,7 +144,7 @@ function VikingClassResources:OnCharacterCreated()
 end
 
 function VikingClassResources:OnWindowManagementReady()
-  Event_FireGenericEvent("WindowManagementAdd", { wnd = self.wndMain, strName = "Viking Class Resources"} )
+  Event_FireGenericEvent("WindowManagementAdd", { wnd = self.wndMain, strName = "Viking Class Resource"} )
 end
 
 function VikingClassResources:OnWindowManagementUpdate(tWindow)
