@@ -76,7 +76,6 @@ local tInnateTime = {
 
 local tDefaultSettings = {
   VikingMode = false,
-  ResourceText = false,
 }
 
 function VikingClassResources:new(o)
