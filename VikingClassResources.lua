@@ -76,7 +76,10 @@ local tInnateTime = {
 
 local tDefaultSettings = {
   VikingMode = false,
-  ResourceText = false,
+  textStyle = {
+    FocusTextPercent = false,
+    FocusTextValue   = false,
+  },
 }
 
 function VikingClassResources:new(o)
@@ -219,8 +222,23 @@ function VikingClassResources:UpdateProgressBar(unitPlayer, nResourceMax, nResou
   wndPrimaryProgress:SetMax(nProgressMax)
   wndPrimaryProgress:SetProgress(nProgressCurrent)
   wndPrimaryProgress:SetTooltip(String_GetWeaselString(Apollo.GetString( className .. "Resource_FocusTooltip" ), nProgressCurrent, nProgressMax))
-  self.wndMain:FindChild("PrimaryProgressText"):SetText(nProgressCurrent == nProgressMax and "" or (math.floor(nProgressCurrent / nProgressMax * 100).."%"))
+  
 
+
+  --Primary Text Style
+
+  local wndFocusText      = self.wndMain:FindChild("PrimaryProgressText")
+  local bFocusTextPercent = self.db.textStyle["FocusTextPercent"]
+  local bFocusTextValue   = self.db.textStyle["FocusTextValue"]
+
+  if bFocusTextPercent and not bFocusTextValue then
+    wndFocusText:SetText(math.floor(nProgressCurrent  / nProgressMax * 100) .. "%")
+  elseif bFocusTextValue and not bFocusTextPercent then
+    wndFocusText:SetText(nProgressCurrent .. "/" .. nProgressMax)  
+  elseif bFocusTextPercent and bFocusTextValue then
+    wndFocusText:SetText(string.format("%d/%d (%d%%)", nProgressCurrent, nProgressMax, math.floor(nProgressCurrent  / nProgressMax * 100)))
+  end
+  wndFocusText:Show(bFocusTextPercent or bFocusTextValue)
 end
 
 
@@ -525,11 +543,6 @@ function VikingClassResources:HelperToggleVisibiltyPreferences(wndParent, unitPl
   end
 end
 
-
---
---
---
---
 function VikingClassResources:OnGeneratePetCommandTooltip(wndControl, wndHandler, eType, arg1, arg2)
   local xml = nil
   if eType == Tooltip.TooltipGenerateType_PetCommand then
@@ -545,18 +558,32 @@ function VikingClassResources:OnGeneratePetCommandTooltip(wndControl, wndHandler
   end
 end
 
-local VikingClassResourcesInst = VikingClassResources:new()
-VikingClassResourcesInst:Init()
+---------------------------------------------------------------------------------------------------
+-- VikingSettings Functions
+---------------------------------------------------------------------------------------------------
+
+function VikingClassResources:OnTextStyleBtnCheck( wndHandler, wndControl, eMouseButton )
+  self.db.textStyle[wndControl:GetName()] = wndControl:IsChecked()
+end
+
 
 -- Called when the settings form needs to be updated so it visually reflects the options
 function VikingClassResources:UpdateSettingsForm(wndContainer)
-local btnVikingMode = wndContainer:FindChild("VikingMode:Content:VikingMode")
+  --VikingMode
+  wndContainer:FindChild("VikingMode:Content:VikingMode"):SetCheck(self.db.VikingMode)
 
-  if btnVikingMode then
-    btnVikingMode:SetCheck(self.db.VikingMode)
-  end
+  --Text Styles
+  wndContainer:FindChild("ResourceText:Content:FocusTextPercent"):SetCheck(self.db.textStyle["FocusTextPercent"])
+  wndContainer:FindChild("ResourceText:Content:FocusTextValue"):SetCheck(self.db.textStyle["FocusTextValue"])
+
 end
- 
+
 function VikingClassResources:OnVikingModeCheck( wndHandler, wndControl, eMouseButton )
 self.db.VikingMode = wndControl:IsChecked()
 end
+
+local VikingClassResourcesInst = VikingClassResources:new()
+VikingClassResourcesInst:Init()
+
+
+
