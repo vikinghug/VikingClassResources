@@ -154,7 +154,6 @@ function VikingClassResources:OnWindowManagementUpdate(tWindow)
   if tWindow and tWindow.wnd and tWindow.wnd == self.wndMain then
     local bMoveable = tWindow.wnd:IsStyleOn("Moveable")
 
-    tWindow.wnd:SetStyle("Sizable", bMoveable)
     tWindow.wnd:SetStyle("RequireMetaKeyToMove", bMoveable)
     tWindow.wnd:SetStyle("IgnoreMouse", not bMoveable)
   end
