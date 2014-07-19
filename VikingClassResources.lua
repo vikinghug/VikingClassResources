@@ -75,10 +75,12 @@ local tInnateTime = {
 }
 
 local tDefaultSettings = {
-  VikingMode = false,
-  textStyle = {
-    FocusTextPercent = false,
-    FocusTextValue   = false,
+  char = {
+    VikingMode = false,
+    textStyle = {
+      FocusTextPercent = false,
+      FocusTextValue   = false,
+    }
   }
 }
 
@@ -141,8 +143,7 @@ function VikingClassResources:OnCharacterCreated()
   end
 
   if VikingLib ~= nil then
-    VikingLib.Settings.RegisterSettings(self, "VikingClassResources", "Class Resources", tDefaultSettings)
-    self.db = VikingLib.Settings.GetDatabase("VikingClassResources")
+    self.db = VikingLib.Settings.RegisterSettings(self, "VikingClassResources", tDefaultSettings, "Class Resources")
   end
 end
 
@@ -227,8 +228,8 @@ function VikingClassResources:UpdateProgressBar(unitPlayer, nResourceMax, nResou
   --Primary Text Style
 
   local wndFocusText      = self.wndMain:FindChild("PrimaryProgressText")
-  local bFocusTextPercent = self.db.textStyle["FocusTextPercent"]
-  local bFocusTextValue   = self.db.textStyle["FocusTextValue"]
+  local bFocusTextPercent = self.db.char.textStyle["FocusTextPercent"]
+  local bFocusTextValue   = self.db.char.textStyle["FocusTextValue"]
 
   if bFocusTextPercent and not bFocusTextValue then
     wndFocusText:SetText(math.floor(nProgressCurrent  / nProgressMax * 100) .. "%")
@@ -260,8 +261,8 @@ function VikingClassResources:UpdateWarriorResources(unitPlayer, nResourceMax, n
   self:UpdateInnateProgress(bInnate)
 
   -- Innate State Indicator
-  self.wndMain:FindChild("InnateGlow"):Show(not self.db.VikingMode and bInnate)
-  self.wndMain:FindChild("InnateHardcore"):Show(self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateGlow"):Show(not self.db.char.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateHardcore"):Show(self.db.char.VikingMode and bInnate)
   self.wndMain:FindChild("InnateStealth"):Show(false)
 
 end
@@ -375,9 +376,9 @@ function VikingClassResources:UpdateStalkerResources(unitPlayer, nResourceMax, n
 
   -- Innate State Indicator
 local bInnate = GameLib.IsCurrentInnateAbilityActive()
-  self.wndMain:FindChild("InnateGlow"):Show(not self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateGlow"):Show(not self.db.char.VikingMode and bInnate)
   self.wndMain:FindChild("InnateHardcore"):Show(false)
-  self.wndMain:FindChild("InnateStealth"):Show(self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateStealth"):Show(self.db.char.VikingMode and bInnate)
 end
 
 
@@ -514,8 +515,8 @@ end
 
 function VikingClassResources:ShowInnateIndicator()
   local bInnate = GameLib.IsCurrentInnateAbilityActive()
-  self.wndMain:FindChild("InnateGlow"):Show(not self.db.VikingMode and bInnate)
-  self.wndMain:FindChild("InnateHardcore"):Show(self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateGlow"):Show(not self.db.char.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateHardcore"):Show(self.db.char.VikingMode and bInnate)
   self.wndMain:FindChild("InnateStealth"):Show(false)
 end
 
@@ -562,23 +563,23 @@ end
 ---------------------------------------------------------------------------------------------------
 
 function VikingClassResources:OnTextStyleBtnCheck( wndHandler, wndControl, eMouseButton )
-  self.db.textStyle[wndControl:GetName()] = wndControl:IsChecked()
+  self.db.char.textStyle[wndControl:GetName()] = wndControl:IsChecked()
 end
 
 
 -- Called when the settings form needs to be updated so it visually reflects the options
 function VikingClassResources:UpdateSettingsForm(wndContainer)
   --VikingMode
-  wndContainer:FindChild("VikingMode:Content:VikingMode"):SetCheck(self.db.VikingMode)
+  wndContainer:FindChild("VikingMode:Content:VikingMode"):SetCheck(self.db.char.VikingMode)
 
   --Text Styles
-  wndContainer:FindChild("ResourceText:Content:FocusTextPercent"):SetCheck(self.db.textStyle["FocusTextPercent"])
-  wndContainer:FindChild("ResourceText:Content:FocusTextValue"):SetCheck(self.db.textStyle["FocusTextValue"])
+  wndContainer:FindChild("ResourceText:Content:FocusTextPercent"):SetCheck(self.db.char.textStyle["FocusTextPercent"])
+  wndContainer:FindChild("ResourceText:Content:FocusTextValue"):SetCheck(self.db.char.textStyle["FocusTextValue"])
 
 end
 
 function VikingClassResources:OnVikingModeCheck( wndHandler, wndControl, eMouseButton )
-self.db.VikingMode = wndControl:IsChecked()
+  self.db.VikingMode = wndControl:IsChecked()
 end
 
 local VikingClassResourcesInst = VikingClassResources:new()
