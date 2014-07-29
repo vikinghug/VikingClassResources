@@ -148,6 +148,7 @@ end
 
 function VikingClassResources:OnWindowManagementReady()
   Event_FireGenericEvent("WindowManagementAdd", { wnd = self.wndMain, strName = "Viking Class Resource"} )
+  Event_FireGenericEvent("WindowManagementAdd", { wnd = self.wndPet,  strName = "Viking Pet Resource"} )
 end
 
 function VikingClassResources:OnWindowManagementUpdate(tWindow)
@@ -170,15 +171,15 @@ function VikingClassResources:CreateClassResources()
   self.wndMain:ToFront()
 
   if self.eClassID == GameLib.CodeEnumClass.Engineer then
-    self.wndPet = Apollo.LoadForm(self.xmlDoc, "PetBarContainer", g_wndActionBarResources, self)
+    self.wndPet = Apollo.LoadForm(self.xmlDoc, "PetBarContainer", FixedHudStratumLow, self)
     Apollo.RegisterEventHandler("ShowActionBarShortcut", "OnShowActionBarShortcut", self)
     self.wndPet:FindChild("StanceMenuOpenerBtn"):AttachWindow(self.wndPet:FindChild("StanceMenuBG"))
+    self.wndPet:ToFront()
 
     for idx = 1, 5 do
       self.wndPet:FindChild("Stance"..idx):SetData(idx)
     end
 
-    self:OnShowActionBarShortcut(1, IsActionBarSetVisible(1))
   end
   self.wndMain:FindChild("Nodes"):Show(tShowNodes[self.eClassID])
 end
