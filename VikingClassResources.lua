@@ -177,6 +177,8 @@ function VikingClassResources:CreateClassResources()
     self.wndPet:FindChild("StanceMenuOpenerBtn"):AttachWindow(self.wndPet:FindChild("StanceMenuBG"))
     self.wndPet:ToFront()
 
+    self.wndMain:FindChild("PrimaryProgress:EngineerGuide"):Show(true)
+
     for idx = 1, 5 do
       self.wndPet:FindChild("Stance"..idx):SetData(idx)
     end
@@ -276,14 +278,16 @@ function VikingClassResources:UpdateEngineerResources(unitPlayer, nResourceMax, 
   local bInnate              = GameLib.IsCurrentInnateAbilityActive()
   local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
   local wndProgressBar       = self.wndMain:FindChild("PrimaryProgressBar")
+  local wndGuide             = self.wndMain:FindChild("PrimaryProgress:EngineerGuide")
 
   -- Primary Resource
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
 
   if nResourceCurrent >= 30 and nResourceCurrent <= 70 then
-    wndProgressBar:SetBarColor("ffff0000")
+    -- wndProgressBar
+    wndGuide:SetBGColor('aa' .. tColors.red)
   else
-    wndProgressBar:SetBarColor("ff2fd5ac")
+    wndGuide:SetBGColor('99' .. tColors.lightPurple)
   end
 
   -- Innate Bar
@@ -483,19 +487,29 @@ end
 
 function VikingClassResources:UpdateInnateProgress(bInnate)
 
-  if bInnate and not self.bInnateActive then
+  local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
 
-    self.bInnateActive = true
+  if bInnate then
+    if not self.bInnateActive then
 
-    local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
-    local nProgressMax         = tInnateTime[self.eClassID] * 10
+      self.bInnateActive = true
 
-    wndSecondaryProgress:Show(true)
-    wndSecondaryProgress:SetMax(nProgressMax)
-    wndSecondaryProgress:SetProgress(nProgressMax)
+      local nProgressMax         = tInnateTime[self.eClassID] * 10
 
-    self.InnateTimerTick = ApolloTimer.Create(0.01, true, "OnInnateTimerTick", self)
-    self.InnateTimerDone = ApolloTimer.Create(tInnateTime[self.eClassID], false, "OnInnateTimerDone", self)
+      wndSecondaryProgress:Show(true)
+      wndSecondaryProgress:SetMax(nProgressMax)
+      wndSecondaryProgress:SetProgress(nProgressMax)
+
+      self.InnateTimerTick = ApolloTimer.Create(0.01, true, "OnInnateTimerTick", self)
+      self.InnateTimerDone = ApolloTimer.Create(tInnateTime[self.eClassID], false, "OnInnateTimerDone", self)
+    end
+  else
+    if self.InnateTimerTick ~= nil then
+      self.InnateTimerTick:Stop()
+    end
+
+    self.bInnateActive = false
+    wndSecondaryProgress:Show(false)
   end
 end
 
