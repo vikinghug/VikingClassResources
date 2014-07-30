@@ -147,7 +147,7 @@ function VikingClassResources:OnCharacterCreated()
 end
 
 function VikingClassResources:OnWindowManagementReady()
-  Event_FireGenericEvent("WindowManagementAdd", { wnd = self.wndMain, strName = "Viking Class Resource"} )
+  Event_FireGenericEvent("WindowManagementAdd", { wnd = self.wndMain, strName = "Viking Class Resources"} )
   Event_FireGenericEvent("WindowManagementAdd", { wnd = self.wndPet,  strName = "Viking Pet Resource"} )
 end
 
