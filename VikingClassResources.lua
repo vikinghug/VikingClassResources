@@ -75,10 +75,12 @@ local tInnateTime = {
 }
 
 local tDefaultSettings = {
-  VikingMode = false,
-  textStyle = {
-    FocusTextPercent = false,
-    FocusTextValue   = false,
+  char = {
+    VikingMode = false,
+    textStyle = {
+      FocusTextPercent = false,
+      FocusTextValue   = false,
+    }
   }
 }
 
@@ -141,13 +143,13 @@ function VikingClassResources:OnCharacterCreated()
   end
 
   if VikingLib ~= nil then
-    VikingLib.Settings.RegisterSettings(self, "VikingClassResources", "Class Resources", tDefaultSettings)
-    self.db = VikingLib.Settings.GetDatabase("VikingClassResources")
+    self.db = VikingLib.Settings.RegisterSettings(self, "VikingClassResources", tDefaultSettings, "Class Resources")
   end
 end
 
 function VikingClassResources:OnWindowManagementReady()
-  Event_FireGenericEvent("WindowManagementAdd", { wnd = self.wndMain, strName = "Viking Class Resource"} )
+  Event_FireGenericEvent("WindowManagementAdd", { wnd = self.wndMain, strName = "Viking Class Resources"} )
+  Event_FireGenericEvent("WindowManagementAdd", { wnd = self.wndPet,  strName = "Viking Pet Resource"} )
 end
 
 function VikingClassResources:OnWindowManagementUpdate(tWindow)
@@ -170,15 +172,17 @@ function VikingClassResources:CreateClassResources()
   self.wndMain:ToFront()
 
   if self.eClassID == GameLib.CodeEnumClass.Engineer then
-    self.wndPet = Apollo.LoadForm(self.xmlDoc, "PetBarContainer", g_wndActionBarResources, self)
+    self.wndPet = Apollo.LoadForm(self.xmlDoc, "PetBarContainer", FixedHudStratumLow, self)
     Apollo.RegisterEventHandler("ShowActionBarShortcut", "OnShowActionBarShortcut", self)
     self.wndPet:FindChild("StanceMenuOpenerBtn"):AttachWindow(self.wndPet:FindChild("StanceMenuBG"))
+    self.wndPet:ToFront()
+
+    self.wndMain:FindChild("PrimaryProgress:EngineerGuide"):Show(true)
 
     for idx = 1, 5 do
       self.wndPet:FindChild("Stance"..idx):SetData(idx)
     end
 
-    self:OnShowActionBarShortcut(1, IsActionBarSetVisible(1))
   end
   self.wndMain:FindChild("Nodes"):Show(tShowNodes[self.eClassID])
 end
@@ -227,8 +231,8 @@ function VikingClassResources:UpdateProgressBar(unitPlayer, nResourceMax, nResou
   --Primary Text Style
 
   local wndFocusText      = self.wndMain:FindChild("PrimaryProgressText")
-  local bFocusTextPercent = self.db.textStyle["FocusTextPercent"]
-  local bFocusTextValue   = self.db.textStyle["FocusTextValue"]
+  local bFocusTextPercent = self.db.char.textStyle["FocusTextPercent"]
+  local bFocusTextValue   = self.db.char.textStyle["FocusTextValue"]
 
   if bFocusTextPercent and not bFocusTextValue then
     wndFocusText:SetText(math.floor(nProgressCurrent  / nProgressMax * 100) .. "%")
@@ -260,8 +264,8 @@ function VikingClassResources:UpdateWarriorResources(unitPlayer, nResourceMax, n
   self:UpdateInnateProgress(bInnate)
 
   -- Innate State Indicator
-  self.wndMain:FindChild("InnateGlow"):Show(not self.db.VikingMode and bInnate)
-  self.wndMain:FindChild("InnateHardcore"):Show(self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateGlow"):Show(not self.db.char.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateHardcore"):Show(self.db.char.VikingMode and bInnate)
   self.wndMain:FindChild("InnateStealth"):Show(false)
 
 end
@@ -274,14 +278,16 @@ function VikingClassResources:UpdateEngineerResources(unitPlayer, nResourceMax, 
   local bInnate              = GameLib.IsCurrentInnateAbilityActive()
   local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
   local wndProgressBar       = self.wndMain:FindChild("PrimaryProgressBar")
+  local wndGuide             = self.wndMain:FindChild("PrimaryProgress:EngineerGuide")
 
   -- Primary Resource
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
 
   if nResourceCurrent >= 30 and nResourceCurrent <= 70 then
-    wndProgressBar:SetBarColor("ffff0000")
+    -- wndProgressBar
+    wndGuide:SetBGColor('aa' .. tColors.red)
   else
-    wndProgressBar:SetBarColor("ff2fd5ac")
+    wndGuide:SetBGColor('99' .. tColors.lightPurple)
   end
 
   -- Innate Bar
@@ -375,9 +381,9 @@ function VikingClassResources:UpdateStalkerResources(unitPlayer, nResourceMax, n
 
   -- Innate State Indicator
 local bInnate = GameLib.IsCurrentInnateAbilityActive()
-  self.wndMain:FindChild("InnateGlow"):Show(not self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateGlow"):Show(not self.db.char.VikingMode and bInnate)
   self.wndMain:FindChild("InnateHardcore"):Show(false)
-  self.wndMain:FindChild("InnateStealth"):Show(self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateStealth"):Show(self.db.char.VikingMode and bInnate)
 end
 
 
@@ -481,19 +487,29 @@ end
 
 function VikingClassResources:UpdateInnateProgress(bInnate)
 
-  if bInnate and not self.bInnateActive then
+  local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
 
-    self.bInnateActive = true
+  if bInnate then
+    if not self.bInnateActive then
 
-    local wndSecondaryProgress = self.wndMain:FindChild("SecondaryProgressBar")
-    local nProgressMax         = tInnateTime[self.eClassID] * 10
+      self.bInnateActive = true
 
-    wndSecondaryProgress:Show(true)
-    wndSecondaryProgress:SetMax(nProgressMax)
-    wndSecondaryProgress:SetProgress(nProgressMax)
+      local nProgressMax         = tInnateTime[self.eClassID] * 10
 
-    self.InnateTimerTick = ApolloTimer.Create(0.01, true, "OnInnateTimerTick", self)
-    self.InnateTimerDone = ApolloTimer.Create(tInnateTime[self.eClassID], false, "OnInnateTimerDone", self)
+      wndSecondaryProgress:Show(true)
+      wndSecondaryProgress:SetMax(nProgressMax)
+      wndSecondaryProgress:SetProgress(nProgressMax)
+
+      self.InnateTimerTick = ApolloTimer.Create(0.01, true, "OnInnateTimerTick", self)
+      self.InnateTimerDone = ApolloTimer.Create(tInnateTime[self.eClassID], false, "OnInnateTimerDone", self)
+    end
+  else
+    if self.InnateTimerTick ~= nil then
+      self.InnateTimerTick:Stop()
+    end
+
+    self.bInnateActive = false
+    wndSecondaryProgress:Show(false)
   end
 end
 
@@ -514,8 +530,8 @@ end
 
 function VikingClassResources:ShowInnateIndicator()
   local bInnate = GameLib.IsCurrentInnateAbilityActive()
-  self.wndMain:FindChild("InnateGlow"):Show(not self.db.VikingMode and bInnate)
-  self.wndMain:FindChild("InnateHardcore"):Show(self.db.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateGlow"):Show(not self.db.char.VikingMode and bInnate)
+  self.wndMain:FindChild("InnateHardcore"):Show(self.db.char.VikingMode and bInnate)
   self.wndMain:FindChild("InnateStealth"):Show(false)
 end
 
@@ -562,23 +578,23 @@ end
 ---------------------------------------------------------------------------------------------------
 
 function VikingClassResources:OnTextStyleBtnCheck( wndHandler, wndControl, eMouseButton )
-  self.db.textStyle[wndControl:GetName()] = wndControl:IsChecked()
+  self.db.char.textStyle[wndControl:GetName()] = wndControl:IsChecked()
 end
 
 
 -- Called when the settings form needs to be updated so it visually reflects the options
 function VikingClassResources:UpdateSettingsForm(wndContainer)
   --VikingMode
-  wndContainer:FindChild("VikingMode:Content:VikingMode"):SetCheck(self.db.VikingMode)
+  wndContainer:FindChild("VikingMode:Content:VikingMode"):SetCheck(self.db.char.VikingMode)
 
   --Text Styles
-  wndContainer:FindChild("ResourceText:Content:FocusTextPercent"):SetCheck(self.db.textStyle["FocusTextPercent"])
-  wndContainer:FindChild("ResourceText:Content:FocusTextValue"):SetCheck(self.db.textStyle["FocusTextValue"])
+  wndContainer:FindChild("ResourceText:Content:FocusTextPercent"):SetCheck(self.db.char.textStyle["FocusTextPercent"])
+  wndContainer:FindChild("ResourceText:Content:FocusTextValue"):SetCheck(self.db.char.textStyle["FocusTextValue"])
 
 end
 
 function VikingClassResources:OnVikingModeCheck( wndHandler, wndControl, eMouseButton )
-self.db.VikingMode = wndControl:IsChecked()
+  self.db.VikingMode = wndControl:IsChecked()
 end
 
 local VikingClassResourcesInst = VikingClassResources:new()
