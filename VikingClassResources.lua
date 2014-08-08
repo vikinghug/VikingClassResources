@@ -132,8 +132,8 @@ function VikingClassResources:GetDefaults()
       VikingModeShow = false,
     },   
     textStyle = {
-      FocusTextPercent = false,
-      FocusTextValue   = false,
+      ResourceTextPercent = false,
+      ResourceTextValue   = false,
     }
   }
 }
@@ -606,7 +606,6 @@ function VikingClassResources:UpdateSettingsForm(wndContainer)
   --Text Styles
   wndContainer:FindChild("ResourceText:Content:ResourceTextPercent"):SetCheck(self.db.char.textStyle["ResourceTextPercent"])
   wndContainer:FindChild("ResourceText:Content:ResourceTextValue"):SetCheck(self.db.char.textStyle["ResourceTextValue"])
-
 end
 
 local VikingClassResourcesInst = VikingClassResources:new()
