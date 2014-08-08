@@ -74,14 +74,13 @@ local tInnateTime = {
   [GameLib.CodeEnumClass.Spellslinger] = 0
 }
 
-local tDefaultSettings = {
-  char = {
-    VikingMode = false,
-    textStyle = {
-      FocusTextPercent = false,
-      FocusTextValue   = false,
-    }
-  }
+local tVikingModeType = {
+  [GameLib.CodeEnumClass.Warrior]      = "Hardcore",
+  [GameLib.CodeEnumClass.Engineer]     = "Hardcore",
+  [GameLib.CodeEnumClass.Esper]        = "Hardcore",
+  [GameLib.CodeEnumClass.Medic]        = "Hardcore",
+  [GameLib.CodeEnumClass.Stalker]      = "Stealth",
+  [GameLib.CodeEnumClass.Spellslinger] = "Hardcore"
 }
 
 function VikingClassResources:new(o)
@@ -100,7 +99,8 @@ function VikingClassResources:OnLoad()
   self.xmlDoc:RegisterCallback("OnDocumentReady", self)
 
   Apollo.RegisterEventHandler("ActionBarLoaded", "OnRequiredFlagsChanged", self)
-
+  Apollo.RegisterEventHandler("WindowManagementReady"      , "OnWindowManagementReady"      , self)
+  Apollo.RegisterEventHandler("WindowManagementUpdate"     , "OnWindowManagementUpdate"     , self)
 
   Apollo.LoadSprites("VikingClassResourcesSprites.xml")
 end
@@ -109,9 +109,6 @@ function VikingClassResources:OnDocumentReady()
   if self.xmlDoc == nil then
     return
   end
-
-  Apollo.RegisterEventHandler("WindowManagementReady"      , "OnWindowManagementReady"      , self)
-  Apollo.RegisterEventHandler("WindowManagementUpdate"     , "OnWindowManagementUpdate"     , self)
 
   self.bDocLoaded = true
   self:OnRequiredFlagsChanged()
@@ -127,7 +124,20 @@ function VikingClassResources:OnRequiredFlagsChanged()
   end
 end
 
+function VikingClassResources:GetDefaults()
 
+  return {
+    char = {
+    VikingMode = {
+      VikingModeShow = false,
+    },   
+    textStyle = {
+      FocusTextPercent = false,
+      FocusTextValue   = false,
+    }
+  }
+}
+end
 
 function VikingClassResources:OnCharacterCreated()
   local unitPlayer = GameLib.GetPlayerUnit()
@@ -143,7 +153,7 @@ function VikingClassResources:OnCharacterCreated()
   end
 
   if VikingLib ~= nil then
-    self.db = VikingLib.Settings.RegisterSettings(self, "VikingClassResources", tDefaultSettings, "Class Resources")
+    self.db = VikingLib.Settings.RegisterSettings(self, "VikingClassResources", self:GetDefaults(), "Class Resources")
   end
 end
 
@@ -160,6 +170,7 @@ function VikingClassResources:OnWindowManagementUpdate(tWindow)
     tWindow.wnd:SetStyle("IgnoreMouse", not bMoveable)
   end
 end
+
 
 function VikingClassResources:CreateClassResources()
 
@@ -264,12 +275,8 @@ function VikingClassResources:UpdateWarriorResources(unitPlayer, nResourceMax, n
   self:UpdateInnateProgress(bInnate)
 
   -- Innate State Indicator
-  self.wndMain:FindChild("InnateGlow"):Show(not self.db.char.VikingMode and bInnate)
-  self.wndMain:FindChild("InnateHardcore"):Show(self.db.char.VikingMode and bInnate)
-  self.wndMain:FindChild("InnateStealth"):Show(false)
-
+  self:ShowInnateIndicator()
 end
-
 
 --
 -- ENGINEER
@@ -294,8 +301,7 @@ function VikingClassResources:UpdateEngineerResources(unitPlayer, nResourceMax, 
   self:UpdateInnateProgress(bInnate)
 
   -- Innate State Indicator
-  self:ShowInnateIndicator(bInnate)
-
+  self:ShowInnateIndicator()
 end
 
 --
@@ -321,7 +327,6 @@ function VikingClassResources:UpdateEsperResources(unitPlayer, nResourceMax, nRe
 
   -- Innate State Indicator
   self:ShowInnateIndicator()
-
 end
 
 
@@ -366,7 +371,6 @@ function VikingClassResources:UpdateMedicResources(unitPlayer, nResourceMax, nRe
 
   -- Innate State Indicator
   self:ShowInnateIndicator()
-
 end
 
 
@@ -380,10 +384,7 @@ function VikingClassResources:UpdateStalkerResources(unitPlayer, nResourceMax, n
   self:UpdateProgressBar(unitPlayer, nResourceMax, nResourceCurrent)
 
   -- Innate State Indicator
-local bInnate = GameLib.IsCurrentInnateAbilityActive()
-  self.wndMain:FindChild("InnateGlow"):Show(not self.db.char.VikingMode and bInnate)
-  self.wndMain:FindChild("InnateHardcore"):Show(false)
-  self.wndMain:FindChild("InnateStealth"):Show(self.db.char.VikingMode and bInnate)
+  self:ShowInnateIndicator()
 end
 
 
@@ -494,7 +495,7 @@ function VikingClassResources:UpdateInnateProgress(bInnate)
 
       self.bInnateActive = true
 
-      local nProgressMax         = tInnateTime[self.eClassID] * 10
+      local nProgressMax = tInnateTime[self.eClassID] * 10
 
       wndSecondaryProgress:Show(true)
       wndSecondaryProgress:SetMax(nProgressMax)
@@ -529,14 +530,21 @@ end
 --   The animated sprite shown when your Innate is active
 
 function VikingClassResources:ShowInnateIndicator()
-  local bInnate = GameLib.IsCurrentInnateAbilityActive()
-  self.wndMain:FindChild("InnateGlow"):Show(not self.db.char.VikingMode and bInnate)
-  self.wndMain:FindChild("InnateHardcore"):Show(self.db.char.VikingMode and bInnate)
-  self.wndMain:FindChild("InnateStealth"):Show(false)
+  local bInnate       = GameLib.IsCurrentInnateAbilityActive()
+  local wndVikingMode = self.wndMain:FindChild("Innate" .. tVikingModeType[self.eClassID])
+  local wndInnateGlow = self.wndMain:FindChild("InnateGlow")
+  local bVikingMode   = self.db.char.VikingMode["VikingModeShow"]
+
+  if bVikingMode then
+    -- Viking Mode
+    wndVikingMode:Show(bInnate)
+    wndInnateGlow:Show(false)
+  else
+    -- Normal Innate
+    wndInnateGlow:Show(bInnate)
+    wndVikingMode:Show(false)
+  end
 end
-
-
-
 
 --
 --
@@ -577,24 +585,23 @@ end
 -- VikingSettings Functions
 ---------------------------------------------------------------------------------------------------
 
-function VikingClassResources:OnTextStyleBtnCheck( wndHandler, wndControl, eMouseButton )
+function VikingClassResources:OnSettingsTextStyle( wndHandler, wndControl, eMouseButton )
   self.db.char.textStyle[wndControl:GetName()] = wndControl:IsChecked()
 end
 
+function VikingClassResources:OnSettingsVikingMode( wndHandler, wndControl, eMouseButton )
+  self.db.char.VikingMode[wndControl:GetName()] = wndControl:IsChecked()
+end
 
 -- Called when the settings form needs to be updated so it visually reflects the options
 function VikingClassResources:UpdateSettingsForm(wndContainer)
   --VikingMode
-  wndContainer:FindChild("VikingMode:Content:VikingMode"):SetCheck(self.db.char.VikingMode)
+  wndContainer:FindChild("VikingMode:Content:VikingModeShow"):SetCheck(self.db.char.VikingMode["VikingModeShow"])
 
   --Text Styles
   wndContainer:FindChild("ResourceText:Content:FocusTextPercent"):SetCheck(self.db.char.textStyle["FocusTextPercent"])
   wndContainer:FindChild("ResourceText:Content:FocusTextValue"):SetCheck(self.db.char.textStyle["FocusTextValue"])
 
-end
-
-function VikingClassResources:OnVikingModeCheck( wndHandler, wndControl, eMouseButton )
-  self.db.VikingMode = wndControl:IsChecked()
 end
 
 local VikingClassResourcesInst = VikingClassResources:new()
