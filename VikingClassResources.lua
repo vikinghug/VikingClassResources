@@ -132,8 +132,8 @@ function VikingClassResources:GetDefaults()
       VikingModeShow = false,
     },   
     textStyle = {
-      FocusTextPercent = false,
-      FocusTextValue   = false,
+      ResourceTextPercent = false,
+      ResourceTextValue   = false,
     }
   }
 }
@@ -241,18 +241,23 @@ function VikingClassResources:UpdateProgressBar(unitPlayer, nResourceMax, nResou
 
   --Primary Text Style
 
-  local wndFocusText      = self.wndMain:FindChild("PrimaryProgressText")
-  local bFocusTextPercent = self.db.char.textStyle["FocusTextPercent"]
-  local bFocusTextValue   = self.db.char.textStyle["FocusTextValue"]
+  local wndResourceText      = self.wndMain:FindChild("PrimaryProgress:PrimaryProgressText")
+  local bResourceTextPercent = self.db.char.textStyle["ResourceTextPercent"]
+  local bResourceTextValue   = self.db.char.textStyle["ResourceTextValue"]
 
-  if bFocusTextPercent and not bFocusTextValue then
-    wndFocusText:SetText(math.floor(nProgressCurrent  / nProgressMax * 100) .. "%")
-  elseif bFocusTextValue and not bFocusTextPercent then
-    wndFocusText:SetText(nProgressCurrent .. "/" .. nProgressMax)
-  elseif bFocusTextPercent and bFocusTextValue then
-    wndFocusText:SetText(string.format("%d/%d (%d%%)", nProgressCurrent, nProgressMax, math.floor(nProgressCurrent  / nProgressMax * 100)))
+  if bResourceTextPercent and not bResourceTextValue then
+    wndResourceText:SetText(math.floor(nProgressCurrent  / nProgressMax * 100) .. "%")
+  elseif bResourceTextValue and not bResourceTextPercent then
+    wndResourceText:SetText(nProgressCurrent .. "/" .. nProgressMax)
+  elseif bResourceTextPercent and bResourceTextValue then
+    wndResourceText:SetText(string.format("%d/%d (%d%%)", nProgressCurrent, nProgressMax, math.floor(nProgressCurrent  / nProgressMax * 100)))
   end
-  wndFocusText:Show(bFocusTextPercent or bFocusTextValue)
+
+  if self.eClassID == GameLib.CodeEnumClass.Engineer then
+    wndResourceText:Show(bResourceTextPercent or bResourceTextValue)
+  else
+    wndResourceText:Show(not self.bInnateActive and (bResourceTextPercent or bResourceTextValue))
+  end
 end
 
 
@@ -599,9 +604,8 @@ function VikingClassResources:UpdateSettingsForm(wndContainer)
   wndContainer:FindChild("VikingMode:Content:VikingModeShow"):SetCheck(self.db.char.VikingMode["VikingModeShow"])
 
   --Text Styles
-  wndContainer:FindChild("ResourceText:Content:FocusTextPercent"):SetCheck(self.db.char.textStyle["FocusTextPercent"])
-  wndContainer:FindChild("ResourceText:Content:FocusTextValue"):SetCheck(self.db.char.textStyle["FocusTextValue"])
-
+  wndContainer:FindChild("ResourceText:Content:ResourceTextPercent"):SetCheck(self.db.char.textStyle["ResourceTextPercent"])
+  wndContainer:FindChild("ResourceText:Content:ResourceTextValue"):SetCheck(self.db.char.textStyle["ResourceTextValue"])
 end
 
 local VikingClassResourcesInst = VikingClassResources:new()
