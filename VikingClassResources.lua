@@ -134,6 +134,7 @@ function VikingClassResources:GetDefaults()
     textStyle = {
       ResourceTextPercent = false,
       ResourceTextValue   = false,
+      OutlineFont         = false,
     }
   }
 }
@@ -257,6 +258,12 @@ function VikingClassResources:UpdateProgressBar(unitPlayer, nResourceMax, nResou
     wndResourceText:Show(bResourceTextPercent or bResourceTextValue)
   else
     wndResourceText:Show(not self.bInnateActive and (bResourceTextPercent or bResourceTextValue))
+  end
+  
+  if self.db.char.textStyle["OutlineFont"] then
+        wndResourceText:SetFont("CRB_InterfaceSmall_O")
+  else
+        wndResourceText:SetFont("Default")
   end
 end
 
@@ -606,6 +613,8 @@ function VikingClassResources:UpdateSettingsForm(wndContainer)
   --Text Styles
   wndContainer:FindChild("ResourceText:Content:ResourceTextPercent"):SetCheck(self.db.char.textStyle["ResourceTextPercent"])
   wndContainer:FindChild("ResourceText:Content:ResourceTextValue"):SetCheck(self.db.char.textStyle["ResourceTextValue"])
+  wndContainer:FindChild("ResourceText:Content:OutlineFont"):SetCheck(self.db.char.textStyle["OutlineFont"])
+  
 end
 
 local VikingClassResourcesInst = VikingClassResources:new()
